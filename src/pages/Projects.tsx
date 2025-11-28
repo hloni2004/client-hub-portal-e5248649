@@ -49,11 +49,11 @@ export default function Projects() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="content-spacing">
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
-            <p className="text-muted-foreground">Manage and track your projects</p>
+            <h1 className="text-3xl font-bold tracking-tight mb-2">Projects</h1>
+            <p className="text-muted-foreground text-lg">Manage and track your projects</p>
           </div>
           {user?.role === UserRole.ADMIN && (
             <Button>
@@ -90,11 +90,11 @@ export default function Projects() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid-breathe md:grid-cols-2 lg:grid-cols-3">
             {projects.map((project) => (
               <Link key={project.projectId} to={`/projects/${project.projectId}`}>
-                <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
-                  <CardHeader>
+                <Card className="h-full hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-[1.02]">
+                  <CardHeader className="card-spacing pb-4">
                     <div className="flex items-start justify-between">
                       <CardTitle className="text-lg">{project.title}</CardTitle>
                       <Badge className={getStatusColor(project.status)} variant="secondary">

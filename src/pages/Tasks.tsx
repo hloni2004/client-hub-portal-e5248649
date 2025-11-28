@@ -53,33 +53,33 @@ export default function Tasks() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tasks</h1>
-          <p className="text-muted-foreground">Track and manage your tasks</p>
+      <div className="content-spacing">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold tracking-tight mb-2">Tasks</h1>
+          <p className="text-muted-foreground text-lg">Track and manage your tasks</p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid-breathe md:grid-cols-2 lg:grid-cols-4">
           {Object.entries(groupedTasks).map(([status, taskList]) => (
             <Card key={status}>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between text-base">
+              <CardHeader className="card-spacing pb-4">
+                <CardTitle className="flex items-center justify-between text-lg">
                   <span>{status.replace('_', ' ')}</span>
-                  <Badge variant="outline">{taskList.length}</Badge>
+                  <Badge variant="outline" className="text-sm">{taskList.length}</Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="card-spacing tight-spacing">
                 {loading ? (
                   <p className="text-sm text-muted-foreground">Loading...</p>
                 ) : taskList.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No tasks</p>
                 ) : (
                   taskList.map((task) => (
-                    <Card key={task.taskId} className="p-3 hover:shadow-md transition-shadow cursor-pointer">
-                      <div className="space-y-2">
-                        <p className="font-medium text-sm">{task.title}</p>
-                        <p className="text-xs text-muted-foreground line-clamp-2">{task.description}</p>
-                        <div className="flex items-center justify-between">
+                    <Card key={task.taskId} className="pad-comfortable hover:shadow-md transition-all duration-200 cursor-pointer hover:scale-[1.02]">
+                      <div className="space-y-3">
+                        <p className="font-medium text-base leading-relaxed">{task.title}</p>
+                        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">{task.description}</p>
+                        <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center text-xs text-muted-foreground">
                             <Calendar className="h-3 w-3 mr-1" />
                             {new Date(task.dueDate).toLocaleDateString()}

@@ -59,21 +59,21 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user?.name}!</h1>
-          <p className="text-muted-foreground">Here's what's happening with your projects today.</p>
+      <div className="content-spacing">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold tracking-tight mb-2">Welcome back, {user?.name}!</h1>
+          <p className="text-muted-foreground text-lg">Here's what's happening with your projects today.</p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid-breathe md:grid-cols-2 lg:grid-cols-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
-              <FolderKanban className="h-4 w-4 text-muted-foreground" />
+              <FolderKanban className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{projects.length}</div>
-              <p className="text-xs text-muted-foreground">{activeProjects.length} active</p>
+            <CardContent className="pt-4">
+              <div className="text-3xl font-bold mb-1">{projects.length}</div>
+              <p className="text-sm text-muted-foreground">{activeProjects.length} active</p>
             </CardContent>
           </Card>
 
@@ -111,23 +111,23 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid-breathe md:grid-cols-2 mt-8">
           <Card>
-            <CardHeader>
-              <CardTitle>Recent Projects</CardTitle>
+            <CardHeader className="card-spacing pb-4">
+              <CardTitle className="text-xl">Recent Projects</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="card-spacing tight-spacing">
               {loading ? (
                 <p className="text-sm text-muted-foreground">Loading...</p>
               ) : projects.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No projects yet</p>
               ) : (
                 projects.slice(0, 5).map((project) => (
-                  <div key={project.projectId} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{project.title}</p>
-                        <p className="text-xs text-muted-foreground">Due: {new Date(project.dueDate).toLocaleDateString()}</p>
+                  <div key={project.projectId} className="space-y-3 py-3 border-b last:border-0">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-base mb-1 truncate">{project.title}</p>
+                        <p className="text-sm text-muted-foreground">Due: {new Date(project.dueDate).toLocaleDateString()}</p>
                       </div>
                       <Badge className={getStatusColor(project.status)} variant="secondary">
                         {project.status.replace('_', ' ')}

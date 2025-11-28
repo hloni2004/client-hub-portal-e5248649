@@ -8,25 +8,26 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    /* Light beige/taupe elegant background palette */
+    --background: 30 20% 94%;
+    --foreground: 30 15% 20%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card: 30 25% 97%;
+    --card-foreground: 30 15% 20%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover: 30 25% 97%;
+    --popover-foreground: 30 15% 20%;
 
-    --primary: 217 91% 60%;
+    --primary: 28 45% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 214 32% 91%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 30 15% 88%;
+    --secondary-foreground: 30 15% 20%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 30 15% 90%;
+    --muted-foreground: 30 10% 45%;
 
-    --accent: 263 70% 50%;
+    --accent: 35 50% 60%;
     --accent-foreground: 0 0% 100%;
 
     --success: 142 71% 45%;
@@ -38,32 +39,32 @@ All colors MUST be HSL.
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 217 91% 60%;
+    --border: 30 15% 85%;
+    --input: 30 15% 88%;
+    --ring: 28 45% 55%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-background: 30 20% 25%;
+    --sidebar-foreground: 30 20% 94%;
+    --sidebar-primary: 28 45% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 28% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 215 28% 17%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-accent: 30 15% 35%;
+    --sidebar-accent-foreground: 30 20% 94%;
+    --sidebar-border: 30 15% 35%;
+    --sidebar-ring: 28 45% 55%;
 
     /* Status colors */
-    --status-todo: 215 16% 47%;
-    --status-in-progress: 217 91% 60%;
-    --status-in-review: 263 70% 50%;
+    --status-todo: 30 10% 45%;
+    --status-in-progress: 28 45% 55%;
+    --status-in-review: 35 50% 60%;
     --status-completed: 142 71% 45%;
     --status-blocked: 0 84% 60%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(263 70% 50%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(28 45% 55%) 0%, hsl(35 50% 60%) 100%);
     --gradient-success: linear-gradient(135deg, hsl(142 71% 45%) 0%, hsl(158 64% 52%) 100%);
-    --gradient-subtle: linear-gradient(180deg, hsl(210 20% 98%) 0%, hsl(214 32% 91%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(30 20% 94%) 0%, hsl(30 15% 88%) 100%);
   }
 
   .dark {
@@ -123,10 +124,27 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    line-height: 1.6;
+    letter-spacing: 0.01em;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-semibold tracking-tight;
+    line-height: 1.3;
+    margin-bottom: 0.75rem;
+  }
+
+  h1 { @apply text-3xl md:text-4xl mb-6; }
+  h2 { @apply text-2xl md:text-3xl mb-5; }
+  h3 { @apply text-xl md:text-2xl mb-4; }
+  h4 { @apply text-lg md:text-xl mb-3; }
+  
+  p {
+    @apply mb-4;
+  }
+
+  section {
+    @apply mb-8;
   }
 }
 
@@ -141,5 +159,37 @@ All colors MUST be HSL.
 
   .gradient-subtle {
     background: var(--gradient-subtle);
+  }
+
+  /* Spacing utilities for clear structure */
+  .section-spacing {
+    @apply py-8 md:py-12;
+  }
+
+  .content-spacing {
+    @apply space-y-6 md:space-y-8;
+  }
+
+  .card-spacing {
+    @apply p-6 md:p-8;
+  }
+
+  .tight-spacing {
+    @apply space-y-3 md:space-y-4;
+  }
+
+  /* Container with breathing room */
+  .container-breathe {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Grid layouts with proper gaps */
+  .grid-breathe {
+    @apply grid gap-6 md:gap-8;
+  }
+
+  /* Comfortable padding */
+  .pad-comfortable {
+    @apply px-4 py-3 md:px-6 md:py-4;
   }
 }

@@ -23,22 +23,25 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (data: LoginDto) => {
         const response = await apiClient.post('/users/login', data);
-        const user = response.data;
+        const user: User = response.data;
         
-        // Generate a mock token (in production, backend should provide this)
-        const token = btoa(JSON.stringify({ userId: user.userId, role: user.role }));
+        // Generate a token for session management
+        const token = btoa(JSON.stringify({ userId: user.userId, email: user.email, role: user.role }));
         
         localStorage.setItem('authToken', token);
+        localStorage.setItem('user', JSON.stringify(user));
         set({ user, token, isAuthenticated: true });
       },
 
       register: async (data: RegisterDto) => {
         const response = await apiClient.post('/users/register', data);
-        const user = response.data;
+        const user: User = response.data;
         
-        const token = btoa(JSON.stringify({ userId: user.userId, role: user.role }));
+        // Generate a token for session management
+        const token = btoa(JSON.stringify({ userId: user.userId, email: user.email, role: user.role }));
         
         localStorage.setItem('authToken', token);
+        localStorage.setItem('user', JSON.stringify(user));
         set({ user, token, isAuthenticated: true });
       },
 

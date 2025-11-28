@@ -1,5 +1,6 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
+import { Footer } from '@/components/Footer';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -18,6 +19,7 @@ export const Layout = ({ children }: LayoutProps) => {
           <main className="flex-1 p-6 bg-muted/30">
             {children}
           </main>
+          <Footer />
         </div>
       </div>
     </SidebarProvider>
