@@ -1,0 +1,13 @@
+# Images Directory
+
+Store your images in this folder:
+- `/public/images/logo/` - Logo files
+- `/public/images/icons/` - Icon files
+- `/public/images/backgrounds/` - Background images
+- `/public/images/projects/` - Project-related images
+- `/public/images/avatars/` - User avatar images
+
+Access images in your code using:
+```tsx
+<img src="/images/your-image.png" alt="description" />
+```

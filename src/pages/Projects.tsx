@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { CreateProjectDialog } from '@/components/CreateProjectDialog';
 import { useAuthStore } from '@/stores/authStore';
 import { useProjectStore } from '@/stores/projectStore';
 import { ProjectStatus, UserRole } from '@/types';
@@ -13,6 +14,7 @@ import { Plus, Calendar } from 'lucide-react';
 export default function Projects() {
   const { user } = useAuthStore();
   const { projects, loading, fetchProjects, fetchProjectsByClient } = useProjectStore();
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   useEffect(() => {
     const loadProjects = async () => {
@@ -21,6 +23,10 @@ export default function Projects() {
       try {
         if (user.role === UserRole.CLIENT) {
           await fetchProjectsByClient(user.userId);
+        } else if (user.role === UserRole.STAFF) {
+          // Staff see all projects (they might be assigned to any)
+          // In production, you might want to filter by assigned projects only
+          await fetchProjects();
         } else {
           await fetchProjects();
         }
@@ -56,7 +62,7 @@ export default function Projects() {
             <p className="text-muted-foreground text-lg">Manage and track your projects</p>
           </div>
           {user?.role === UserRole.ADMIN && (
-            <Button>
+            <Button onClick={() => setCreateDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               New Project
             </Button>
@@ -82,7 +88,7 @@ export default function Projects() {
             <CardContent className="flex flex-col items-center justify-center py-12">
               <p className="text-muted-foreground mb-4">No projects found</p>
               {user?.role === UserRole.ADMIN && (
-                <Button>
+                <Button onClick={() => setCreateDialogOpen(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create your first project
                 </Button>
@@ -122,6 +128,11 @@ export default function Projects() {
           </div>
         )}
       </div>
+
+      <CreateProjectDialog 
+        open={createDialogOpen} 
+        onOpenChange={setCreateDialogOpen}
+      />
     </Layout>
   );
 }

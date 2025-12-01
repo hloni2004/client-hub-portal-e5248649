@@ -134,7 +134,6 @@ export default function Register() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={UserRole.CLIENT}>Client</SelectItem>
-                  <SelectItem value={UserRole.DEVELOPER}>Developer</SelectItem>
                   <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
                 </SelectContent>
               </Select>

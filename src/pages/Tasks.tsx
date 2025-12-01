@@ -1,15 +1,26 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { UpdateTaskDialog } from '@/components/UpdateTaskDialog';
 import { useAuthStore } from '@/stores/authStore';
 import { useTaskStore } from '@/stores/taskStore';
-import { TaskStatus, UserRole } from '@/types';
+import { TaskStatus, UserRole, Task } from '@/types';
 import { Calendar } from 'lucide-react';
 
 export default function Tasks() {
   const { user } = useAuthStore();
   const { tasks, loading, fetchTasks, fetchTasksByUser } = useTaskStore();
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+
+  const handleTaskClick = (task: Task) => {
+    // Only allow STAFF and ADMIN to update tasks
+    if (user?.role === UserRole.STAFF || user?.role === UserRole.ADMIN) {
+      setSelectedTask(task);
+      setUpdateDialogOpen(true);
+    }
+  };
 
   useEffect(() => {
     const loadTasks = async () => {
@@ -18,7 +29,11 @@ export default function Tasks() {
       try {
         if (user.role === UserRole.CLIENT) {
           await fetchTasksByUser(user.userId);
+        } else if (user.role === UserRole.STAFF) {
+          // Staff see only tasks assigned to them
+          await fetchTasksByUser(user.userId);
         } else {
+          // Admin sees all tasks
           await fetchTasks();
         }
       } catch (error) {
@@ -75,7 +90,11 @@ export default function Tasks() {
                   <p className="text-sm text-muted-foreground">No tasks</p>
                 ) : (
                   taskList.map((task) => (
-                    <Card key={task.taskId} className="pad-comfortable hover:shadow-md transition-all duration-200 cursor-pointer hover:scale-[1.02]">
+                    <Card 
+                      key={task.taskId} 
+                      className="pad-comfortable hover:shadow-md transition-all duration-200 cursor-pointer hover:scale-[1.02]"
+                      onClick={() => handleTaskClick(task)}
+                    >
                       <div className="space-y-3">
                         <p className="font-medium text-base leading-relaxed">{task.title}</p>
                         <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">{task.description}</p>
@@ -97,6 +116,12 @@ export default function Tasks() {
           ))}
         </div>
       </div>
+
+      <UpdateTaskDialog 
+        open={updateDialogOpen}
+        onOpenChange={setUpdateDialogOpen}
+        task={selectedTask}
+      />
     </Layout>
   );
 }

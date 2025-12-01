@@ -50,31 +50,31 @@ export default function ProjectDetail() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
+      <div className="content-spacing">
+        <div className="flex items-start gap-4 mb-8">
           <Link to="/projects">
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" className="hover:bg-accent">
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold tracking-tight">{currentProject.title}</h1>
-            <p className="text-muted-foreground">{currentProject.description}</p>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-3xl font-bold tracking-tight mb-2">{currentProject.title}</h1>
+            <p className="text-muted-foreground text-lg leading-relaxed">{currentProject.description}</p>
           </div>
           <Badge className={getStatusColor(currentProject.status)} variant="secondary">
             {currentProject.status.replace('_', ' ')}
           </Badge>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid-breathe md:grid-cols-3">
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
                 Start Date
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               <p className="text-2xl font-bold">
                 {new Date(currentProject.startDate).toLocaleDateString()}
               </p>
@@ -108,37 +108,36 @@ export default function ProjectDetail() {
           </Card>
         </div>
 
-        <Tabs defaultValue="tasks" className="w-full">
-          <TabsList>
+        <Tabs defaultValue="tasks" className="w-full mt-8">
+          <TabsList className="grid w-full grid-cols-3 max-w-md">
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
             <TabsTrigger value="deliverables">Deliverables</TabsTrigger>
             <TabsTrigger value="team">Team</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="tasks" className="space-y-4">
+          <TabsContent value="tasks" className="mt-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Project Tasks</CardTitle>
-                <CardDescription>{tasks.length} tasks in this project</CardDescription>
+              <CardHeader className="card-spacing pb-4">
+                <CardTitle className="text-xl">Project Tasks</CardTitle>
+                <CardDescription className="text-base">{tasks.length} tasks in this project</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="card-spacing tight-spacing">
                 {tasks.length === 0 ? (
                   <p className="text-muted-foreground">No tasks yet</p>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="tight-spacing">
                     {tasks.map((task) => (
-                      <div
-                        key={task.taskId}
-                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex-1">
-                          <p className="font-medium">{task.title}</p>
-                          <p className="text-sm text-muted-foreground line-clamp-1">
-                            {task.description}
-                          </p>
+                      <Link key={task.taskId} to="/tasks">
+                        <div className="flex items-center justify-between pad-comfortable border rounded-lg hover:bg-muted/50 hover:shadow-sm transition-all cursor-pointer">
+                          <div className="flex-1 min-w-0 mr-4">
+                            <p className="font-medium text-base mb-1">{task.title}</p>
+                            <p className="text-sm text-muted-foreground line-clamp-1">
+                              {task.description}
+                            </p>
+                          </div>
+                          <Badge variant="outline">{task.status.replace('_', ' ')}</Badge>
                         </div>
-                        <Badge variant="outline">{task.status.replace('_', ' ')}</Badge>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 )}
