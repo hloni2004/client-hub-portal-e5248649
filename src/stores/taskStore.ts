@@ -10,6 +10,7 @@ interface TaskState {
   fetchTasksByProject: (projectId: number) => Promise<void>;
   fetchTasksByUser: (userId: number) => Promise<void>;
   createTask: (data: Omit<Task, 'taskId' | 'status'>) => Promise<void>;
+  updateTask: (id: number, data: Partial<Task>) => Promise<void>;
   updateTaskStatus: (id: number, status: TaskStatus) => Promise<void>;
   assignTask: (id: number, userId: number) => Promise<void>;
   deleteTask: (id: number) => Promise<void>;
@@ -56,6 +57,15 @@ export const useTaskStore = create<TaskState>((set) => ({
   createTask: async (data) => {
     const response = await apiClient.post('/tasks/create', data);
     set((state) => ({ tasks: [...state.tasks, response.data] }));
+  },
+
+  updateTask: async (id: number, data: Partial<Task>) => {
+    const response = await apiClient.put(`/tasks/${id}/update`, data);
+    set((state) => ({
+      tasks: state.tasks.map((t) =>
+        t.taskId === id ? response.data : t
+      ),
+    }));
   },
 
   updateTaskStatus: async (id: number, status: TaskStatus) => {

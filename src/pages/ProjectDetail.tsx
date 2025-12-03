@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,20 +6,30 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { CreateTaskDialog } from '@/components/CreateTaskDialog';
+import { UploadDeliverableDialog } from '@/components/UploadDeliverableDialog';
 import { useProjectStore } from '@/stores/projectStore';
 import { useTaskStore } from '@/stores/taskStore';
-import { ProjectStatus } from '@/types';
-import { ArrowLeft, Calendar, Users } from 'lucide-react';
+import { useDeliverableStore } from '@/stores/deliverableStore';
+import { useAuthStore } from '@/stores/authStore';
+import { ProjectStatus, TaskStatus, UserRole } from '@/types';
+import { ArrowLeft, Calendar, Users, FileText, CheckCircle2, Plus, Upload, Download, Check, X } from 'lucide-react';
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuthStore();
   const { currentProject, fetchProjectById } = useProjectStore();
   const { tasks, fetchTasksByProject } = useTaskStore();
+  const { deliverables, fetchDeliverablesByProject } = useDeliverableStore();
+  const [createTaskDialogOpen, setCreateTaskDialogOpen] = useState(false);
+  const [uploadDeliverableDialogOpen, setUploadDeliverableDialogOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
       fetchProjectById(Number(id));
       fetchTasksByProject(Number(id));
+      fetchDeliverablesByProject(Number(id));
     }
   }, [id]);
 
@@ -42,6 +52,21 @@ export default function ProjectDetail() {
       case ProjectStatus.ON_HOLD:
         return 'bg-warning text-warning-foreground';
       case ProjectStatus.CANCELLED:
+        return 'bg-destructive text-destructive-foreground';
+      default:
+        return 'bg-muted text-muted-foreground';
+    }
+  };
+
+  const getTaskStatusColor = (status: TaskStatus) => {
+    switch (status) {
+      case TaskStatus.COMPLETED:
+        return 'bg-success text-success-foreground';
+      case TaskStatus.IN_PROGRESS:
+        return 'bg-primary text-primary-foreground';
+      case TaskStatus.IN_REVIEW:
+        return 'bg-accent text-accent-foreground';
+      case TaskStatus.BLOCKED:
         return 'bg-destructive text-destructive-foreground';
       default:
         return 'bg-muted text-muted-foreground';
@@ -118,28 +143,76 @@ export default function ProjectDetail() {
           <TabsContent value="tasks" className="mt-6">
             <Card>
               <CardHeader className="card-spacing pb-4">
-                <CardTitle className="text-xl">Project Tasks</CardTitle>
-                <CardDescription className="text-base">{tasks.length} tasks in this project</CardDescription>
-              </CardHeader>
-              <CardContent className="card-spacing tight-spacing">
-                {tasks.length === 0 ? (
-                  <p className="text-muted-foreground">No tasks yet</p>
-                ) : (
-                  <div className="tight-spacing">
-                    {tasks.map((task) => (
-                      <Link key={task.taskId} to="/tasks">
-                        <div className="flex items-center justify-between pad-comfortable border rounded-lg hover:bg-muted/50 hover:shadow-sm transition-all cursor-pointer">
-                          <div className="flex-1 min-w-0 mr-4">
-                            <p className="font-medium text-base mb-1">{task.title}</p>
-                            <p className="text-sm text-muted-foreground line-clamp-1">
-                              {task.description}
-                            </p>
-                          </div>
-                          <Badge variant="outline">{task.status.replace('_', ' ')}</Badge>
-                        </div>
-                      </Link>
-                    ))}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-xl">Project Tasks</CardTitle>
+                    <CardDescription className="text-base">{tasks.length} tasks in this project</CardDescription>
                   </div>
+                  {user?.role === UserRole.ADMIN && (
+                    <Button onClick={() => setCreateTaskDialogOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Task
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {tasks.length === 0 ? (
+                  <p className="text-muted-foreground p-4">No tasks yet</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[250px]">Task</TableHead>
+                        <TableHead className="w-[150px]">Status</TableHead>
+                        <TableHead className="w-[120px]">Due Date</TableHead>
+                        <TableHead className="w-[200px]">Deliverable</TableHead>
+                        <TableHead>Notes</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {tasks.map((task) => (
+                        <TableRow key={task.taskId} className="hover:bg-muted/50">
+                          <TableCell>
+                            <div>
+                              <p className="font-medium text-base mb-1">{task.title}</p>
+                              <p className="text-sm text-muted-foreground line-clamp-2">
+                                {task.description}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getTaskStatusColor(task.status)} variant="secondary">
+                              {task.status.replace('_', ' ')}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center text-sm">
+                              <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                              {new Date(task.dueDate).toLocaleDateString()}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {task.deliverable ? (
+                              <div className="flex items-center text-sm">
+                                <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
+                                <span className="truncate">{task.deliverable}</span>
+                              </div>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {task.notes ? (
+                              <p className="text-sm line-clamp-2">{task.notes}</p>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 )}
               </CardContent>
             </Card>
@@ -148,11 +221,80 @@ export default function ProjectDetail() {
           <TabsContent value="deliverables">
             <Card>
               <CardHeader>
-                <CardTitle>Deliverables</CardTitle>
-                <CardDescription>Files and documents for this project</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Deliverables</CardTitle>
+                    <CardDescription>Files and documents for this project</CardDescription>
+                  </div>
+                  {user?.role === UserRole.ADMIN && (
+                    <Button onClick={() => setUploadDeliverableDialogOpen(true)}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Deliverable
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">No deliverables yet</p>
+                {deliverables.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground mb-4">No deliverables yet</p>
+                    {user?.role === UserRole.ADMIN && (
+                      <Button onClick={() => setUploadDeliverableDialogOpen(true)}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Your First Deliverable
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>File Name</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Uploaded</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {deliverables.map((deliverable) => (
+                        <TableRow key={deliverable.deliverableId}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium">{deliverable.fileName}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{deliverable.fileType}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {new Date(deliverable.uploadedAt).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            {deliverable.approved ? (
+                              <Badge className="bg-success text-success-foreground">
+                                <Check className="h-3 w-3 mr-1" />
+                                Approved
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary">
+                                <X className="h-3 w-3 mr-1" />
+                                Pending
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="sm">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -170,6 +312,22 @@ export default function ProjectDetail() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {currentProject && (
+        <CreateTaskDialog
+          open={createTaskDialogOpen}
+          onOpenChange={setCreateTaskDialogOpen}
+          projectId={currentProject.projectId}
+        />
+      )}
+
+      {currentProject && (
+        <UploadDeliverableDialog
+          open={uploadDeliverableDialogOpen}
+          onOpenChange={setUploadDeliverableDialogOpen}
+          projectId={currentProject.projectId}
+        />
+      )}
     </Layout>
   );
 }

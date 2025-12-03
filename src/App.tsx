@@ -11,6 +11,11 @@ import Tasks from "./pages/Tasks";
 import Deliverables from "./pages/Deliverables";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
+import Clients from "./pages/Clients";
+import Staff from "./pages/Staff";
+import Approvals from "./pages/Approvals";
+import Archive from "./pages/Archive";
+import SearchPage from "./pages/SearchPage";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import NotFound from "./pages/NotFound";
@@ -63,6 +68,46 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Deliverables />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/clients"
+            element={
+              <ProtectedRoute>
+                <Clients />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/staff"
+            element={
+              <ProtectedRoute>
+                <Staff />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/approvals"
+            element={
+              <ProtectedRoute>
+                <Approvals />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/archive"
+            element={
+              <ProtectedRoute>
+                <Archive />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/search"
+            element={
+              <ProtectedRoute>
+                <SearchPage />
               </ProtectedRoute>
             }
           />

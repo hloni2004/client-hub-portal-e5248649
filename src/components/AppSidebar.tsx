@@ -1,4 +1,4 @@
-import { Home, FolderKanban, CheckSquare, Users, FileUp, Bell, User, LogOut } from 'lucide-react';
+import { Home, FolderKanban, CheckSquare, Users, FileUp, Bell, User, LogOut, Search, Archive as ArchiveIcon, CheckCircle, UserCog } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import {
@@ -16,13 +16,22 @@ import {
 import { useAuthStore } from '@/stores/authStore';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { UserRole } from '@/types';
 
 const mainItems = [
   { title: 'Dashboard', url: '/', icon: Home },
   { title: 'Projects', url: '/projects', icon: FolderKanban },
   { title: 'Tasks', url: '/tasks', icon: CheckSquare },
   { title: 'Deliverables', url: '/deliverables', icon: FileUp },
+  { title: 'Search', url: '/search', icon: Search },
   { title: 'Notifications', url: '/notifications', icon: Bell },
+];
+
+const adminItems = [
+  { title: 'Clients', url: '/clients', icon: Users },
+  { title: 'Staff', url: '/staff', icon: UserCog },
+  { title: 'Approvals', url: '/approvals', icon: CheckCircle },
+  { title: 'Archive', url: '/archive', icon: ArchiveIcon },
 ];
 
 export function AppSidebar() {
@@ -70,6 +79,30 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {user?.role === UserRole.ADMIN && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-sidebar-foreground/70">Admin</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                        activeClassName="bg-sidebar-primary text-sidebar-primary-foreground font-medium"
+                      >
+                        <item.icon className="h-5 w-5" />
+                        {!isCollapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/70">Account</SidebarGroupLabel>

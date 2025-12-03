@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CreateStaffDialog } from '@/components/CreateStaffDialog';
@@ -9,7 +9,8 @@ import { useAuthStore } from '@/stores/authStore';
 import { useProjectStore } from '@/stores/projectStore';
 import { useTaskStore } from '@/stores/taskStore';
 import { useNotificationStore } from '@/stores/notificationStore';
-import { FolderKanban, CheckSquare, FileUp, Bell, ArrowRight, UserPlus, Users } from 'lucide-react';
+import { useDeliverableStore } from '@/stores/deliverableStore';
+import { FolderKanban, CheckSquare, FileUp, Bell, ArrowRight, UserPlus, Users, AlertCircle, Clock, TrendingUp } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ProjectStatus, TaskStatus, UserRole } from '@/types';
@@ -20,10 +21,12 @@ export default function Dashboard() {
   const { projects, fetchProjects, fetchProjectsByClient } = useProjectStore();
   const { tasks, fetchTasks, fetchTasksByUser } = useTaskStore();
   const { unreadCount, fetchUnreadCount } = useNotificationStore();
+  const { deliverables, fetchDeliverables } = useDeliverableStore();
   const [loading, setLoading] = useState(true);
   const [projectFilter, setProjectFilter] = useState<string>('all');
   const [createStaffDialogOpen, setCreateStaffDialogOpen] = useState(false);
   const [staffCount, setStaffCount] = useState(0);
+  const [clientCount, setClientCount] = useState(0);
 
   useEffect(() => {
     const loadData = async () => {
@@ -36,13 +39,20 @@ export default function Dashboard() {
         } else {
           await fetchProjects();
           await fetchTasks();
+          if (user.role === UserRole.ADMIN) {
+            await fetchDeliverables();
+          }
         }
         await fetchUnreadCount(user.userId);
         
-        // Fetch staff count for admin
+        // Fetch counts for admin
         if (user.role === UserRole.ADMIN) {
-          const response = await apiClient.get('/users/role/STAFF');
-          setStaffCount(response.data.length);
+          const [staffResponse, clientResponse] = await Promise.all([
+            apiClient.get('/users/role/STAFF'),
+            apiClient.get('/users/role/CLIENT')
+          ]);
+          setStaffCount(staffResponse.data.length);
+          setClientCount(clientResponse.data.length);
         }
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
@@ -69,6 +79,12 @@ export default function Dashboard() {
   const activeProjects = projects.filter(p => p.status === ProjectStatus.IN_PROGRESS);
   const activeTasks = tasks.filter(t => t.status !== TaskStatus.COMPLETED);
   const completedTasks = tasks.filter(t => t.status === TaskStatus.COMPLETED);
+  const overdueProjects = projects.filter(p => 
+    new Date(p.dueDate) < new Date() && p.status !== ProjectStatus.COMPLETED
+  );
+  const pendingDeliverables = deliverables.filter(d => !d.approved);
+  const onHoldProjects = projects.filter(p => p.status === ProjectStatus.ON_HOLD);
+  const notStartedProjects = projects.filter(p => p.status === ProjectStatus.NOT_STARTED);
 
   // Filter projects based on selected tab
   const filteredProjects = projectFilter === 'all' 
@@ -92,11 +108,165 @@ export default function Dashboard() {
     <Layout>
       <div className="content-spacing">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight mb-2">Welcome back, {user?.name}!</h1>
-          <p className="text-muted-foreground text-lg">Here's what's happening with your projects today.</p>
+          <h1 className="text-3xl font-bold tracking-tight mb-2">
+            {user?.role === UserRole.ADMIN ? 'Admin Control Centre' : `Welcome back, ${user?.name}!`}
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            {user?.role === UserRole.ADMIN 
+              ? 'Monitor all activity across the agency' 
+              : "Here's what's happening with your projects today."}
+          </p>
         </div>
 
-        <div className="grid-breathe md:grid-cols-2 lg:grid-cols-4">
+        {user?.role === UserRole.ADMIN ? (
+          <>
+            {/* Admin Dashboard Cards */}
+            <div className="grid-breathe md:grid-cols-2 lg:grid-cols-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                  <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
+                  <FolderKanban className="h-5 w-5 text-muted-foreground" />
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="text-3xl font-bold mb-1">{projects.length}</div>
+                  <p className="text-sm text-muted-foreground">
+                    {activeProjects.length} active, {completedTasks.length} completed
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                  <CardTitle className="text-sm font-medium">Projects Behind Schedule</CardTitle>
+                  <AlertCircle className="h-5 w-5 text-destructive" />
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="text-3xl font-bold mb-1 text-destructive">{overdueProjects.length}</div>
+                  <p className="text-sm text-muted-foreground">
+                    {onHoldProjects.length} on hold, {notStartedProjects.length} not started
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                  <CardTitle className="text-sm font-medium">Pending Approvals</CardTitle>
+                  <Clock className="h-5 w-5 text-warning" />
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="text-3xl font-bold mb-1 text-warning">{pendingDeliverables.length}</div>
+                  <p className="text-sm text-muted-foreground">
+                    Deliverables requiring approval
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                  <CardTitle className="text-sm font-medium">Active Clients</CardTitle>
+                  <Users className="h-5 w-5 text-muted-foreground" />
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="text-3xl font-bold mb-1">{clientCount}</div>
+                  <p className="text-sm text-muted-foreground">
+                    {staffCount} staff members
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Admin Quick Actions */}
+            <div className="grid-breathe md:grid-cols-3 mt-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                    Urgent Attention
+                  </CardTitle>
+                  <CardDescription>Projects needing immediate action</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {overdueProjects.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">All projects on track</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {overdueProjects.slice(0, 3).map((project) => (
+                        <Link key={project.projectId} to={`/projects/${project.projectId}`}>
+                          <div className="p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                            <p className="font-medium text-sm mb-1">{project.title}</p>
+                            <p className="text-xs text-destructive">
+                              Overdue by {Math.floor((new Date().getTime() - new Date(project.dueDate).getTime()) / (1000 * 60 * 60 * 24))} days
+                            </p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileUp className="h-5 w-5 text-warning" />
+                    Pending Approvals
+                  </CardTitle>
+                  <CardDescription>Deliverables awaiting review</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {pendingDeliverables.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No pending approvals</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {pendingDeliverables.slice(0, 3).map((deliverable) => (
+                        <div key={deliverable.deliverableId} className="p-3 border rounded-lg">
+                          <p className="font-medium text-sm mb-1">{deliverable.fileName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Uploaded {new Date(deliverable.uploadedAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-success" />
+                    Quick Actions
+                  </CardTitle>
+                  <CardDescription>Common admin tasks</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <Link to="/projects">
+                    <Button variant="outline" className="w-full justify-start">
+                      <FolderKanban className="h-4 w-4 mr-2" />
+                      Create New Project
+                    </Button>
+                  </Link>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => setCreateStaffDialogOpen(true)}
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Add Staff Member
+                  </Button>
+                  <Link to="/notifications">
+                    <Button variant="outline" className="w-full justify-start">
+                      <Bell className="h-4 w-4 mr-2" />
+                      View All Notifications
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        ) : (
+          // Client/Staff Dashboard
+          <div className="grid-breathe md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
@@ -119,36 +289,16 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {user?.role === UserRole.ADMIN ? (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Staff Members</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{staffCount}</div>
-                <Button 
-                  variant="link" 
-                  className="text-xs p-0 h-auto text-primary hover:underline"
-                  onClick={() => setCreateStaffDialogOpen(true)}
-                >
-                  <UserPlus className="h-3 w-3 mr-1" />
-                  Add Staff Member
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending Deliverables</CardTitle>
-                <FileUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">0</div>
-                <p className="text-xs text-muted-foreground">Awaiting approval</p>
-              </CardContent>
-            </Card>
-          )}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending Deliverables</CardTitle>
+              <FileUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">0</div>
+              <p className="text-xs text-muted-foreground">Awaiting approval</p>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -161,7 +311,9 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+        )}
 
+        {/* Projects and Tasks Section - Common for all roles */}
         <div className="grid-breathe md:grid-cols-2 mt-8">
           <Card>
             <CardHeader className="card-spacing pb-4">

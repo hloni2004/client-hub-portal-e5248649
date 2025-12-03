@@ -32,6 +32,7 @@ export interface Project {
   dueDate: string;
   status: ProjectStatus;
   progress: number;
+  client?: User;
 }
 
 export enum TaskStatus {
@@ -50,6 +51,10 @@ export interface Task {
   assignedToId: number;
   dueDate: string;
   status: TaskStatus;
+  deliverable?: string;
+  notes?: string;
+  project?: Project;
+  assignedTo?: User;
 }
 
 export enum ProjectAccessRole {
@@ -90,10 +95,12 @@ export interface Deliverable {
   deliverableId: number;
   fileName: string;
   fileType: string;
-  fileUrl: string;
+  filePath: string;
   projectId: number;
+  taskId?: number;
   approved: boolean;
   uploadedAt: string;
+  project?: Project;
 }
 
 export interface Feedback {
