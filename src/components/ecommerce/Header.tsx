@@ -1,13 +1,31 @@
-import { Link } from 'react-router-dom';
-import { ShoppingBag, Search, Menu, User, X } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ShoppingBag, Search, Menu, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useCartStore } from '@/stores/ecommerce/cartStore';
 import { useProductStore } from '@/stores/ecommerce/productStore';
+import { useAuthStore } from '@/stores/authStore';
+import { toast } from 'sonner';
 
 export function Header() {
+  const navigate = useNavigate();
   const { itemCount, openCart } = useCartStore();
   const { categories } = useProductStore();
+  const { user, logout } = useAuthStore();
+
+  const handleSignOut = () => {
+    logout();
+    toast.success('Signed out successfully');
+    navigate('/auth/login');
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
@@ -53,9 +71,47 @@ export function Header() {
           <Button variant="ghost" size="icon" className="hidden md:flex">
             <Search className="h-5 w-5" />
           </Button>
-          <Button variant="ghost" size="icon">
-            <User className="h-5 w-5" />
-          </Button>
+          
+          {/* User Profile Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <User className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">
+                    {user?.firstName && user?.lastName 
+                      ? `${user.firstName} ${user.lastName}`
+                      : user?.username || user?.email}
+                  </p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {user?.email}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {user?.roleName === 'ADMIN' && (
+                <>
+                  <DropdownMenuItem onClick={() => navigate('/admin/dashboard')} className="cursor-pointer">
+                    <span>Admin Dashboard</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              <DropdownMenuItem onClick={() => navigate('/orders')} className="cursor-pointer">
+                <span>My Orders</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut} className="text-red-600 cursor-pointer">
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Sign out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Button variant="ghost" size="icon" className="relative" onClick={openCart}>
             <ShoppingBag className="h-5 w-5" />
             {itemCount > 0 && (

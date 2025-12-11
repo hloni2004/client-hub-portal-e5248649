@@ -1,10 +1,9 @@
 import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
-import { UserRole } from '@/types';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: UserRole;
+  requiredRole?: string;
 }
 
 export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
@@ -14,7 +13,7 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
     return <Navigate to="/auth/login" replace />;
   }
 
-  if (requiredRole && user?.role !== requiredRole && user?.role !== UserRole.ADMIN) {
+  if (requiredRole && user?.roleName !== requiredRole && user?.roleName !== 'ADMIN') {
     return <Navigate to="/" replace />;
   }
 

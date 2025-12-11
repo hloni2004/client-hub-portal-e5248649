@@ -26,7 +26,7 @@ export const useAuthStore = create<AuthState>()(
         const user: User = response.data;
         
         // Generate a token for session management
-        const token = btoa(JSON.stringify({ userId: user.userId, email: user.email, role: user.role }));
+        const token = btoa(JSON.stringify({ userId: user.userId, email: user.email, roleName: user.roleName }));
         
         localStorage.setItem('authToken', token);
         localStorage.setItem('user', JSON.stringify(user));
@@ -38,7 +38,7 @@ export const useAuthStore = create<AuthState>()(
         const user: User = response.data;
         
         // Generate a token for session management
-        const token = btoa(JSON.stringify({ userId: user.userId, email: user.email, role: user.role }));
+        const token = btoa(JSON.stringify({ userId: user.userId, email: user.email, roleName: user.roleName }));
         
         localStorage.setItem('authToken', token);
         localStorage.setItem('user', JSON.stringify(user));
@@ -47,6 +47,8 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        localStorage.removeItem('auth-storage');
         set({ user: null, token: null, isAuthenticated: false });
       },
 

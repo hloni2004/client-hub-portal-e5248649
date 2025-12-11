@@ -125,10 +125,12 @@ export default function Cart() {
                     </div>
                   </div>
 
-                  <Button className="w-full h-14 text-sm tracking-[0.15em] uppercase">
-                    Proceed to Checkout
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
+                  <Link to="/checkout">
+                    <Button className="w-full h-14 text-sm tracking-[0.15em] uppercase">
+                      Proceed to Checkout
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
 
                   <div className="text-center space-y-2 text-xs text-muted-foreground">
                     <p>Secure checkout powered by Stripe</p>

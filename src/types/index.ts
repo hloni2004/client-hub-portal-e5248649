@@ -2,17 +2,25 @@ export enum UserRole {
   CLIENT = 'CLIENT',
   STAFF = 'STAFF',
   ADMIN = 'ADMIN',
+  USER = 'USER',
+  CUSTOMER = 'CUSTOMER',
 }
 
 export interface User {
   userId: number;
-  name: string;
+  username?: string;
   email: string;
-  role: UserRole;
-  companyName?: string;
+  firstName?: string;
+  lastName?: string;
   phone?: string;
+  roleName?: string;
+  isActive?: boolean;
+  // Legacy fields for backward compatibility
+  name?: string;
+  role?: UserRole;
+  companyName?: string;
   lastLogin?: string;
-  createdAt: string;
+  createdAt?: string;
 }
 
 export enum ProjectStatus {
@@ -113,10 +121,12 @@ export interface Feedback {
 }
 
 export interface RegisterDto {
-  name: string;
   email: string;
   password: string;
-  role: UserRole;
+  firstName: string;
+  lastName: string;
+  username?: string;
+  phone?: string;
 }
 
 export interface LoginDto {

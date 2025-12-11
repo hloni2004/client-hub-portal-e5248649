@@ -158,24 +158,77 @@ export const useProductStore = create<ProductState>((set, get) => ({
   fetchProducts: async () => {
     set({ loading: true, error: null });
     try {
-      // const response = await apiClient.get('/products/getAll');
-      // set({ products: response.data, loading: false });
-      // Mock data for now
-      set({ products: mockProducts, featuredProducts: mockProducts.filter(p => p.isFeatured), loading: false });
+      const response = await apiClient.get('/products/getAll');
+      const products = response.data.data || response.data;
+      
+      // Transform backend data to frontend format
+      const transformedProducts = products.map((p: any) => ({
+        id: p.productId,
+        name: p.name,
+        description: p.description,
+        basePrice: p.basePrice,
+        salePrice: p.comparePrice > 0 ? p.comparePrice : undefined,
+        sku: p.sku,
+        categoryId: p.category?.categoryId || 0,
+        category: p.category,
+        brand: 'Maison Luxe',
+        rating: 4.5,
+        reviewCount: 0,
+        variants: [],
+        images: [], // Legacy field
+        productImages: p.images, // New blob-based images
+        isActive: p.isActive,
+        isNew: false,
+        isFeatured: false,
+        createdAt: p.createdAt || new Date().toISOString(),
+        updatedAt: p.updatedAt || new Date().toISOString(),
+      }));
+      
+      set({ 
+        products: transformedProducts, 
+        featuredProducts: transformedProducts.filter((p: any) => p.isFeatured), 
+        loading: false 
+      });
     } catch (error) {
-      set({ error: 'Failed to fetch products', loading: false });
+      console.error('Error fetching products:', error);
+      set({ error: 'Failed to fetch products', loading: false, products: mockProducts });
     }
   },
 
   fetchProductById: async (id: number) => {
     set({ loading: true, error: null });
     try {
-      // const response = await apiClient.get(`/products/read/${id}`);
-      // set({ currentProduct: response.data, loading: false });
+      const response = await apiClient.get(`/products/read/${id}`);
+      const p = response.data.data || response.data;
+      
+      const transformedProduct = {
+        id: p.productId,
+        name: p.name,
+        description: p.description,
+        basePrice: p.basePrice,
+        salePrice: p.comparePrice > 0 ? p.comparePrice : undefined,
+        sku: p.sku,
+        categoryId: p.category?.categoryId || 0,
+        category: p.category,
+        brand: 'Maison Luxe',
+        rating: 4.5,
+        reviewCount: 0,
+        variants: [],
+        images: [],
+        productImages: p.images,
+        colours: p.colours || [], // Add colours from backend
+        isActive: p.isActive,
+        isNew: false,
+        isFeatured: false,
+        createdAt: p.createdAt || new Date().toISOString(),
+        updatedAt: p.updatedAt || new Date().toISOString(),
+      };
+      
+      set({ currentProduct: transformedProduct, loading: false });
+    } catch (error) {
+      console.error('Error fetching product:', error);
       const product = mockProducts.find(p => p.id === id) || null;
       set({ currentProduct: product, loading: false });
-    } catch (error) {
-      set({ error: 'Failed to fetch product', loading: false });
     }
   },
 

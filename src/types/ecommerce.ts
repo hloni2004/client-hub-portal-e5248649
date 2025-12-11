@@ -28,6 +28,28 @@ export interface ProductVariant {
   images: string[];
 }
 
+export interface ProductImage {
+  imageId: number;
+  imageUrl?: string; // Keep for backward compatibility
+  isPrimary: boolean;
+  displayOrder: number;
+}
+
+export interface ProductColourSize {
+  sizeId: number;
+  sizeName: string;
+  stockQuantity: number;
+  reservedQuantity: number;
+  reorderLevel: number;
+}
+
+export interface ProductColour {
+  colourId: number;
+  name: string;
+  hexCode: string;
+  sizes: ProductColourSize[];
+}
+
 export interface Product {
   id: number;
   name: string;
@@ -42,7 +64,9 @@ export interface Product {
   rating: number;
   reviewCount: number;
   variants: ProductVariant[];
-  images: string[];
+  images: string[]; // Legacy: URLs or base64
+  productImages?: ProductImage[]; // New: blob storage with IDs
+  colours?: ProductColour[]; // Product colours from database
   isActive: boolean;
   isNew?: boolean;
   isFeatured?: boolean;

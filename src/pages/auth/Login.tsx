@@ -34,8 +34,18 @@ export default function Login() {
     setIsLoading(true);
     try {
       await login({ email: data.email, password: data.password });
+      
+      // Get the logged in user to check their role
+      const user = useAuthStore.getState().user;
+      
       toast.success('Login successful!');
-      navigate('/');
+      
+      // Redirect based on user role
+      if (user?.roleName === 'ADMIN') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/');
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Login failed. Please check your credentials.');
     } finally {

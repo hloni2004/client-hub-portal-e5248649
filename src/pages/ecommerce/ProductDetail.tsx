@@ -15,29 +15,25 @@ const mockReviews = [
   { id: 3, userName: 'Sophie L.', rating: 4, comment: 'Beautiful design and excellent attention to detail. Worth every penny.', date: '2025-01-05', isVerified: true },
 ];
 
-const mockColors = [
-  { id: 1, name: 'Noir', hexCode: '#1a1a1a' },
-  { id: 2, name: 'Ivory', hexCode: '#FFFFF0' },
-  { id: 3, name: 'Bordeaux', hexCode: '#722F37' },
-];
-
-const mockSizes = [
-  { id: 1, name: 'XS', available: true },
-  { id: 2, name: 'S', available: true },
-  { id: 3, name: 'M', available: true },
-  { id: 4, name: 'L', available: false },
-  { id: 5, name: 'XL', available: true },
-];
-
 export default function ProductDetail() {
   const { id } = useParams();
   const { currentProduct, fetchProductById, featuredProducts, loading } = useProductStore();
   const { addItem } = useCartStore();
   const { toast } = useToast();
   const [quantity, setQuantity] = useState(1);
-  const [selectedColor, setSelectedColor] = useState(mockColors[0]);
-  const [selectedSize, setSelectedSize] = useState<typeof mockSizes[0] | null>(null);
+  const [selectedColor, setSelectedColor] = useState<any>(null);
+  const [selectedSize, setSelectedSize] = useState<any>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Set default color when product loads
+  useEffect(() => {
+    if (currentProduct?.colours && currentProduct.colours.length > 0 && !selectedColor) {
+      setSelectedColor(currentProduct.colours[0]);
+    }
+  }, [currentProduct]);
+
+  // Get available sizes for selected color
+  const availableSizes = selectedColor?.sizes || [];
 
   useEffect(() => {
     if (id) {
@@ -54,14 +50,56 @@ export default function ProductDetail() {
   };
 
   const handleAddToCart = () => {
+    if (!currentProduct?.colours || currentProduct.colours.length === 0) {
+      toast({ title: 'Product has no color options', variant: 'destructive' });
+      return;
+    }
+    
+    if (!selectedColor) {
+      toast({ title: 'Please select a color', variant: 'destructive' });
+      return;
+    }
+    
     if (!selectedSize) {
       toast({ title: 'Please select a size', variant: 'destructive' });
       return;
     }
+    
     if (currentProduct) {
-      addItem(currentProduct, quantity, selectedColor.id, selectedSize.id);
-      toast({ title: 'Added to bag', description: `${currentProduct.name} has been added to your bag.` });
+      // Add item with proper IDs from database
+      addItem(currentProduct, quantity, selectedColor.colourId, selectedSize.sizeId);
+      toast({ 
+        title: 'Added to bag', 
+        description: `${currentProduct.name} (${selectedColor.name}, ${selectedSize.sizeName}) has been added to your bag.` 
+      });
     }
+  };
+
+  // Helper to get product image URLs
+  const getProductImageUrls = () => {
+    if (!currentProduct) return [];
+    
+    // Check if product has blob-based images
+    if (currentProduct.productImages && currentProduct.productImages.length > 0) {
+      // Sort by display order and primary first
+      const sortedImages = [...currentProduct.productImages].sort((a, b) => {
+        if (a.isPrimary && !b.isPrimary) return -1;
+        if (!a.isPrimary && b.isPrimary) return 1;
+        return a.displayOrder - b.displayOrder;
+      });
+      
+      return sortedImages.map(img => 
+        `http://localhost:8080/api/products/image/${img.imageId}`
+      );
+    }
+    
+    // Fallback to legacy images array
+    if (currentProduct.images && currentProduct.images.length > 0) {
+      return currentProduct.images;
+    }
+    
+    // Default fallback image
+    return ['https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800'];
   };
 
   if (loading || !currentProduct) {
@@ -82,7 +120,7 @@ export default function ProductDetail() {
     );
   }
 
-  const images = [currentProduct.images[0], currentProduct.images[0], currentProduct.images[0]];
+  const images = getProductImageUrls();
 
   return (
     <div className="min-h-screen bg-background">
@@ -107,11 +145,20 @@ export default function ProductDetail() {
           {/* Image Gallery */}
           <div className="space-y-4">
             <div className="relative aspect-[3/4] overflow-hidden bg-muted">
-              <img
-                src={images[currentImageIndex]}
-                alt={currentProduct.name}
-                className="w-full h-full object-cover"
-              />
+              {images.length > 0 ? (
+                <img
+                  src={images[currentImageIndex]}
+                  alt={currentProduct.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800';
+                  }}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                  No images available
+                </div>
+              )}
               {images.length > 1 && (
                 <>
                   <button
@@ -129,19 +176,28 @@ export default function ProductDetail() {
                 </>
               )}
             </div>
-            <div className="flex gap-3">
-              {images.map((img, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentImageIndex(index)}
-                  className={`w-20 aspect-[3/4] overflow-hidden border-2 transition-colors ${
-                    currentImageIndex === index ? 'border-foreground' : 'border-transparent'
-                  }`}
-                >
-                  <img src={img} alt="" className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
+            {images.length > 1 && (
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {images.map((img, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`w-20 aspect-[3/4] overflow-hidden border-2 transition-colors flex-shrink-0 ${
+                      currentImageIndex === index ? 'border-foreground' : 'border-border hover:border-foreground/50'
+                    }`}
+                  >
+                    <img 
+                      src={img} 
+                      alt={`${currentProduct.name} - View ${index + 1}`} 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800';
+                      }}
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Product Info */}
@@ -174,48 +230,62 @@ export default function ProductDetail() {
             <p className="text-muted-foreground leading-relaxed">{currentProduct.description}</p>
 
             {/* Color Selection */}
-            <div>
-              <p className="text-sm tracking-wider uppercase mb-4">Color: <span className="text-muted-foreground">{selectedColor.name}</span></p>
-              <div className="flex gap-3">
-                {mockColors.map(color => (
-                  <button
-                    key={color.id}
-                    onClick={() => setSelectedColor(color)}
-                    className={`w-10 h-10 rounded-full border-2 transition-all ${
-                      selectedColor.id === color.id ? 'border-foreground scale-110' : 'border-transparent'
-                    }`}
-                    style={{ backgroundColor: color.hexCode }}
-                    title={color.name}
-                  />
-                ))}
+            {currentProduct.colours && currentProduct.colours.length > 0 && (
+              <div>
+                <p className="text-sm tracking-wider uppercase mb-4">
+                  Color: <span className="text-muted-foreground">{selectedColor?.name || 'Select a color'}</span>
+                </p>
+                <div className="flex gap-3 flex-wrap">
+                  {currentProduct.colours.map(color => (
+                    <button
+                      key={color.colourId}
+                      onClick={() => {
+                        setSelectedColor(color);
+                        setSelectedSize(null); // Reset size when color changes
+                      }}
+                      className={`w-10 h-10 rounded-full border-2 transition-all ${
+                        selectedColor?.colourId === color.colourId ? 'border-foreground scale-110' : 'border-border'
+                      }`}
+                      style={{ backgroundColor: color.hexCode }}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Size Selection */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-sm tracking-wider uppercase">Size</p>
-                <button className="text-sm text-muted-foreground underline hover:text-foreground">Size Guide</button>
+            {selectedColor && availableSizes.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm tracking-wider uppercase">Size</p>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {availableSizes.map((size: any) => {
+                    const isAvailable = size.stockQuantity > size.reservedQuantity;
+                    return (
+                      <button
+                        key={size.sizeId}
+                        onClick={() => isAvailable && setSelectedSize(size)}
+                        disabled={!isAvailable}
+                        className={`w-14 h-14 border text-sm tracking-wider transition-all ${
+                          selectedSize?.sizeId === size.sizeId
+                            ? 'border-foreground bg-foreground text-background'
+                            : isAvailable
+                            ? 'border-border hover:border-foreground'
+                            : 'border-border/30 text-muted-foreground/30 cursor-not-allowed line-through'
+                        }`}
+                      >
+                        {size.sizeName}
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedColor && availableSizes.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No sizes available for this color</p>
+                )}
               </div>
-              <div className="flex flex-wrap gap-3">
-                {mockSizes.map(size => (
-                  <button
-                    key={size.id}
-                    onClick={() => size.available && setSelectedSize(size)}
-                    disabled={!size.available}
-                    className={`w-14 h-14 border text-sm tracking-wider transition-all ${
-                      selectedSize?.id === size.id
-                        ? 'border-foreground bg-foreground text-background'
-                        : size.available
-                        ? 'border-border hover:border-foreground'
-                        : 'border-border/30 text-muted-foreground/30 cursor-not-allowed line-through'
-                    }`}
-                  >
-                    {size.name}
-                  </button>
-                ))}
-              </div>
-            </div>
+            )}
 
             {/* Quantity & Add to Cart */}
             <div className="flex gap-4">

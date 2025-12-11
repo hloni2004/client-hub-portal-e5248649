@@ -4,17 +4,17 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuthStore } from '@/stores/authStore';
-import { UserRole } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 
 const registerSchema = z
   .object({
-    name: z.string().min(2, 'Name must be at least 2 characters'),
+    firstName: z.string().min(2, 'First name must be at least 2 characters'),
+    lastName: z.string().min(2, 'Last name must be at least 2 characters'),
+    username: z.string().min(3, 'Username must be at least 3 characters').optional(),
     email: z.string().email('Invalid email format'),
     password: z
       .string()
@@ -23,7 +23,7 @@ const registerSchema = z
       .regex(/[a-z]/, 'Must contain lowercase letter')
       .regex(/[0-9]/, 'Must contain number'),
     confirmPassword: z.string(),
-    role: z.nativeEnum(UserRole),
+    phone: z.string().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
@@ -40,25 +40,16 @@ export default function Register() {
   const {
     register: registerField,
     handleSubmit,
-    setValue,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: {
-      role: UserRole.CLIENT,
-    },
   });
 
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
     try {
       const { confirmPassword, ...registerData } = data;
-      await register({
-        name: registerData.name,
-        email: registerData.email,
-        password: registerData.password,
-        role: registerData.role
-      });
+      await register(registerData);
       toast.success('Registration successful!');
       navigate('/');
     } catch (error: any) {
@@ -77,15 +68,37 @@ export default function Register() {
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  placeholder="John"
+                  {...registerField('firstName')}
+                  disabled={isLoading}
+                />
+                {errors.firstName && <p className="text-sm text-destructive">{errors.firstName.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  placeholder="Doe"
+                  {...registerField('lastName')}
+                  disabled={isLoading}
+                />
+                {errors.lastName && <p className="text-sm text-destructive">{errors.lastName.message}</p>}
+              </div>
+            </div>
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="username">Username (Optional)</Label>
               <Input
-                id="name"
-                placeholder="John Doe"
-                {...registerField('name')}
+                id="username"
+                placeholder="johndoe123"
+                {...registerField('username')}
                 disabled={isLoading}
               />
-              {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+              {errors.username && <p className="text-sm text-destructive">{errors.username.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -97,6 +110,17 @@ export default function Register() {
                 disabled={isLoading}
               />
               {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone (Optional)</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="+27 12 345 6789"
+                {...registerField('phone')}
+                disabled={isLoading}
+              />
+              {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -121,23 +145,6 @@ export default function Register() {
               {errors.confirmPassword && (
                 <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
               )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
-              <Select
-                onValueChange={(value) => setValue('role', value as UserRole)}
-                defaultValue={UserRole.CLIENT}
-                disabled={isLoading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={UserRole.CLIENT}>Client</SelectItem>
-                  <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.role && <p className="text-sm text-destructive">{errors.role.message}</p>}
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">

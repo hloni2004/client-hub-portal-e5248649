@@ -24,6 +24,20 @@ export default function Shop() {
 
   const categoryParam = searchParams.get('category');
 
+  // Helper to get product image URL
+  const getProductImageUrl = (product: any) => {
+    // Check if product has blob-based images
+    if (product.productImages && product.productImages.length > 0) {
+      const primaryImage = product.productImages.find((img: any) => img.isPrimary) || product.productImages[0];
+      return `http://localhost:8080/api/products/image/${primaryImage.imageId}`;
+    }
+    // Fallback to legacy images array
+    if (product.images && product.images.length > 0) {
+      return product.images[0];
+    }
+    return '';
+  };
+
   useEffect(() => {
     fetchProducts();
     fetchCategories();
@@ -255,9 +269,12 @@ export default function Shop() {
                     <Link to={`/product/${product.id}`} className="block">
                       <div className="relative aspect-[3/4] overflow-hidden bg-muted mb-4">
                         <img
-                          src={product.images[0]}
+                          src={getProductImageUrl(product)}
                           alt={product.name}
                           className="product-image w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800';
+                          }}
                         />
                         <div className="image-overlay" />
                         {product.isNew && (
@@ -312,7 +329,14 @@ export default function Shop() {
                 {filteredProducts.map((product) => (
                   <div key={product.id} className="flex gap-6 p-4 border border-border rounded-sm hover:border-primary/50 transition-colors">
                     <Link to={`/product/${product.id}`} className="w-32 aspect-[3/4] flex-shrink-0 overflow-hidden bg-muted">
-                      <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                      <img
+                        src={getProductImageUrl(product)}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800';
+                        }}
+                      />
                     </Link>
                     <div className="flex-1">
                       <p className="text-[10px] text-muted-foreground tracking-wider uppercase mb-1">{product.brand}</p>
