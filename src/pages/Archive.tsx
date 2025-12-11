@@ -51,8 +51,8 @@ export default function Archive() {
     }
   };
 
-  const handlePermanentDelete = async (projectId: number, projectName: string) => {
-    if (confirm(`Are you sure you want to permanently delete "${projectName}"? This action cannot be undone.`)) {
+  const handlePermanentDelete = async (projectId: number, projectTitle: string) => {
+    if (confirm(`Are you sure you want to permanently delete "${projectTitle}"? This action cannot be undone.`)) {
       setLoading(true);
       try {
         await apiClient.delete(`/projects/${projectId}`);
@@ -74,7 +74,7 @@ export default function Archive() {
   };
 
   const filteredProjects = archivedProjects.filter(project =>
-    project.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     project.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
     project.client?.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -140,7 +140,7 @@ export default function Archive() {
                     <TableRow key={project.projectId}>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{project.projectName}</p>
+                          <p className="font-medium">{project.title}</p>
                           <p className="text-sm text-muted-foreground line-clamp-1">
                             {project.description}
                           </p>
@@ -163,8 +163,8 @@ export default function Archive() {
                         {new Date(project.startDate).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        {project.endDate
-                          ? new Date(project.endDate).toLocaleDateString()
+                        {project.dueDate
+                          ? new Date(project.dueDate).toLocaleDateString()
                           : '-'}
                       </TableCell>
                       <TableCell className="text-right">
@@ -182,7 +182,7 @@ export default function Archive() {
                             size="sm"
                             variant="destructive"
                             onClick={() =>
-                              handlePermanentDelete(project.projectId, project.projectName)
+                              handlePermanentDelete(project.projectId, project.title)
                             }
                             disabled={loading}
                           >

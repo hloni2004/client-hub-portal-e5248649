@@ -31,7 +31,7 @@ export default function Search() {
   const searchResults = {
     projects: projects.filter(
       p =>
-        p.projectName.toLowerCase().includes(query) ||
+        p.title.toLowerCase().includes(query) ||
         p.description.toLowerCase().includes(query) ||
         p.client?.name.toLowerCase().includes(query)
     ),
@@ -39,12 +39,12 @@ export default function Search() {
       t =>
         t.title.toLowerCase().includes(query) ||
         t.description.toLowerCase().includes(query) ||
-        t.project?.projectName.toLowerCase().includes(query)
+        t.project?.title.toLowerCase().includes(query)
     ),
     deliverables: deliverables.filter(
       d =>
         d.fileName.toLowerCase().includes(query) ||
-        d.project?.projectName.toLowerCase().includes(query)
+        d.project?.title.toLowerCase().includes(query)
     ),
     people: [...clients, ...staff].filter(
       u =>
@@ -61,19 +61,17 @@ export default function Search() {
     searchResults.people.length;
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, string> = {
-      [ProjectStatus.NOT_STARTED]: 'bg-gray-500 text-white',
-      [ProjectStatus.IN_PROGRESS]: 'bg-blue-500 text-white',
-      [ProjectStatus.ON_HOLD]: 'bg-yellow-500 text-white',
-      [ProjectStatus.COMPLETED]: 'bg-success text-success-foreground',
-      [ProjectStatus.CANCELLED]: 'bg-destructive text-destructive-foreground',
-      [TaskStatus.TODO]: 'bg-gray-500 text-white',
-      [TaskStatus.IN_PROGRESS]: 'bg-blue-500 text-white',
-      [TaskStatus.COMPLETED]: 'bg-success text-success-foreground',
+    const getStatusClass = (s: string): string => {
+      if (s === 'NOT_STARTED' || s === 'TODO') return 'bg-muted text-muted-foreground';
+      if (s === 'IN_PROGRESS') return 'bg-primary text-primary-foreground';
+      if (s === 'ON_HOLD' || s === 'IN_REVIEW') return 'bg-warning text-warning-foreground';
+      if (s === 'COMPLETED') return 'bg-success text-success-foreground';
+      if (s === 'CANCELLED' || s === 'BLOCKED') return 'bg-destructive text-destructive-foreground';
+      return '';
     };
 
     return (
-      <Badge variant="outline" className={variants[status] || ''}>
+      <Badge variant="outline" className={getStatusClass(status)}>
         {status}
       </Badge>
     );
@@ -180,7 +178,7 @@ export default function Search() {
                                 onClick={() => navigate(`/projects/${project.projectId}`)}
                               >
                                 <div className="flex-1">
-                                  <p className="font-medium">{project.projectName}</p>
+                                  <p className="font-medium">{project.title}</p>
                                   <p className="text-sm text-muted-foreground line-clamp-1">
                                     {project.description}
                                   </p>
@@ -217,7 +215,7 @@ export default function Search() {
                                     {task.description}
                                   </p>
                                   <p className="text-xs text-muted-foreground mt-1">
-                                    Project: {task.project?.projectName || '-'}
+                                    Project: {task.project?.title || '-'}
                                   </p>
                                 </div>
                                 {getStatusBadge(task.status)}
@@ -246,7 +244,7 @@ export default function Search() {
                                 <div className="flex-1">
                                   <p className="font-medium">{deliverable.fileName}</p>
                                   <p className="text-sm text-muted-foreground">
-                                    Project: {deliverable.project?.projectName || '-'}
+                                    Project: {deliverable.project?.title || '-'}
                                   </p>
                                   <p className="text-xs text-muted-foreground mt-1">
                                     Uploaded: {new Date(deliverable.uploadedAt).toLocaleDateString()}
@@ -324,7 +322,7 @@ export default function Search() {
                             onClick={() => navigate(`/projects/${project.projectId}`)}
                           >
                             <div className="flex-1">
-                              <p className="font-medium">{project.projectName}</p>
+                              <p className="font-medium">{project.title}</p>
                               <p className="text-sm text-muted-foreground line-clamp-1">
                                 {project.description}
                               </p>
@@ -365,7 +363,7 @@ export default function Search() {
                                 {task.description}
                               </p>
                               <p className="text-xs text-muted-foreground mt-1">
-                                Project: {task.project?.projectName || '-'}
+                                Project: {task.project?.title || '-'}
                               </p>
                             </div>
                             {getStatusBadge(task.status)}
@@ -398,7 +396,7 @@ export default function Search() {
                             <div className="flex-1">
                               <p className="font-medium">{deliverable.fileName}</p>
                               <p className="text-sm text-muted-foreground">
-                                Project: {deliverable.project?.projectName || '-'}
+                                Project: {deliverable.project?.title || '-'}
                               </p>
                               <p className="text-xs text-muted-foreground mt-1">
                                 Uploaded: {new Date(deliverable.uploadedAt).toLocaleDateString()}
