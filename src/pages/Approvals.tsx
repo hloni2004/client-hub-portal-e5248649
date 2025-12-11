@@ -149,7 +149,7 @@ export default function Approvals() {
                               <span className="font-medium">{deliverable.fileName}</span>
                             </div>
                           </TableCell>
-                          <TableCell>{deliverable.project?.projectName || '-'}</TableCell>
+                          <TableCell>{deliverable.project?.title || '-'}</TableCell>
                           <TableCell>
                             {deliverable.taskId ? (
                               <Badge variant="outline">Task #{deliverable.taskId}</Badge>
@@ -238,7 +238,7 @@ export default function Approvals() {
                               <span className="font-medium">{deliverable.fileName}</span>
                             </div>
                           </TableCell>
-                          <TableCell>{deliverable.project?.projectName || '-'}</TableCell>
+                          <TableCell>{deliverable.project?.title || '-'}</TableCell>
                           <TableCell>
                             {deliverable.taskId ? (
                               <Badge variant="outline">Task #{deliverable.taskId}</Badge>
