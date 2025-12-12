@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, ShoppingCart, Users, TrendingUp } from 'lucide-react';
+import { Package, ShoppingCart, Users, TrendingUp, FolderTree } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import apiClient from '@/lib/api';
@@ -58,7 +58,7 @@ export default function AdminDashboard() {
     },
     {
       title: 'Revenue',
-      value: `$${stats.revenue.toFixed(2)}`,
+      value: `R${stats.revenue.toFixed(2)}`,
       icon: TrendingUp,
       description: 'Total revenue',
     },
@@ -104,6 +104,10 @@ export default function AdminDashboard() {
             <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/admin/products')}>
               <Package className="mr-2 h-4 w-4" />
               Manage Products
+            </Button>
+            <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/admin/categories')}>
+              <FolderTree className="mr-2 h-4 w-4" />
+              Manage Categories
             </Button>
           </CardContent>
         </Card>

@@ -101,6 +101,10 @@ export function Header() {
                   <DropdownMenuSeparator />
                 </>
               )}
+              <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer">
+                <User className="mr-2 h-4 w-4" />
+                <span>My Profile</span>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate('/orders')} className="cursor-pointer">
                 <span>My Orders</span>
               </DropdownMenuItem>

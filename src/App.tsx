@@ -15,10 +15,12 @@ import ProductDetail from "./pages/ecommerce/ProductDetail";
 import Cart from "./pages/ecommerce/Cart";
 import Checkout from "./pages/ecommerce/Checkout";
 import Orders from "./pages/ecommerce/Orders";
+import EcommerceProfile from "./pages/ecommerce/Profile";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
+import AdminCategories from "./pages/admin/AdminCategories";
 import AddProduct from "./pages/admin/AddProduct";
 import EditProduct from "./pages/admin/EditProduct";
 
@@ -47,6 +49,7 @@ const App = () => (
           <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
           <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
           <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><EcommerceProfile /></ProtectedRoute>} />
 
           {/* Protected Admin Routes */}
           <Route path="/admin" element={<ProtectedRoute requiredRole="ADMIN"><AdminDashboard /></ProtectedRoute>} />
@@ -54,6 +57,7 @@ const App = () => (
           <Route path="/admin/products" element={<ProtectedRoute requiredRole="ADMIN"><AdminProducts /></ProtectedRoute>} />
           <Route path="/admin/products/add" element={<ProtectedRoute requiredRole="ADMIN"><AddProduct /></ProtectedRoute>} />
           <Route path="/admin/products/edit/:id" element={<ProtectedRoute requiredRole="ADMIN"><EditProduct /></ProtectedRoute>} />
+          <Route path="/admin/categories" element={<ProtectedRoute requiredRole="ADMIN"><AdminCategories /></ProtectedRoute>} />
 
           {/* Fallback Routes */}
           <Route path="*" element={<NotFound />} />

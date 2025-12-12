@@ -8,10 +8,10 @@ export function CartDrawer() {
   const { items, subtotal, itemCount, isOpen, closeCart, updateQuantity, removeItem } = useCartStore();
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-ZA', {
       style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
+      currency: 'ZAR',
+      minimumFractionDigits: 2,
     }).format(price);
   };
 
@@ -38,7 +38,11 @@ export function CartDrawer() {
               {items.map(item => (
                 <div key={item.id} className="flex gap-4">
                   <Link to={`/product/${item.productId}`} onClick={closeCart} className="w-20 aspect-[3/4] flex-shrink-0 overflow-hidden bg-muted">
-                    <img src={item.product.images[0]} alt={item.product.name} className="w-full h-full object-cover" />
+                    <img 
+                      src={item.product.primaryImage?.imageData || item.product.images?.[0] || '/images/placeholder.png'} 
+                      alt={item.product.name} 
+                      className="w-full h-full object-cover" 
+                    />
                   </Link>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between gap-2 mb-1">
@@ -88,10 +92,12 @@ export function CartDrawer() {
                     View Bag
                   </Button>
                 </Link>
-                <Button className="w-full h-12 text-xs tracking-[0.15em] uppercase">
-                  Checkout
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+                <Link to="/checkout" onClick={closeCart}>
+                  <Button className="w-full h-12 text-xs tracking-[0.15em] uppercase">
+                    Checkout
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
               </div>
             </div>
           </>

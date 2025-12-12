@@ -193,7 +193,11 @@ export default function AddProduct() {
       const response = await apiClient.post('/products/create', productData);
       toast.success('Product created successfully with all details!');
       console.log('Created product:', response.data);
-      navigate('/admin/products');
+      
+      // Navigate back to products page after 1 second
+      setTimeout(() => {
+        navigate('/admin/products');
+      }, 1000);
     } catch (error: any) {
       console.error('Error creating product:', error);
       toast.error(error.response?.data?.message || 'Failed to create product');
@@ -204,11 +208,22 @@ export default function AddProduct() {
 
   return (
     <div className="container mx-auto py-8">
-      <div className="mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <Button variant="ghost" onClick={() => navigate('/admin/products')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Products
         </Button>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" onClick={() => navigate('/admin/dashboard')}>
+            Dashboard
+          </Button>
+          <Button variant="ghost" onClick={() => navigate('/admin/products')}>
+            Products
+          </Button>
+          <Button variant="ghost" onClick={() => navigate('/admin/categories')}>
+            Categories
+          </Button>
+        </div>
       </div>
 
       <Card>

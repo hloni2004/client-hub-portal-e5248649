@@ -255,11 +255,22 @@ export default function EditProduct() {
 
   return (
     <div className="container mx-auto py-8">
-      <div className="mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <Button variant="ghost" onClick={() => navigate('/admin/products')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Products
         </Button>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" onClick={() => navigate('/admin/dashboard')}>
+            Dashboard
+          </Button>
+          <Button variant="ghost" onClick={() => navigate('/admin/products')}>
+            Products
+          </Button>
+          <Button variant="ghost" onClick={() => navigate('/admin/categories')}>
+            Categories
+          </Button>
+        </div>
       </div>
 
       <Card>

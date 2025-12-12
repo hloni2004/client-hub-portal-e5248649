@@ -10,6 +10,7 @@ interface AuthState {
   login: (data: LoginDto) => Promise<void>;
   register: (data: RegisterDto) => Promise<void>;
   logout: () => void;
+  setUser: (user: User) => void;
   updateProfile: (userId: number, data: Partial<User>) => Promise<void>;
   changePassword: (userId: number, oldPassword: string, newPassword: string) => Promise<void>;
 }
@@ -46,10 +47,23 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        // Clear all authentication data
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
         localStorage.removeItem('auth-storage');
+        
+        // Clear cart data
+        localStorage.removeItem('luxury-cart-storage');
+        
+        // Clear any other app-specific data
+        localStorage.removeItem('cart-storage');
+        
         set({ user: null, token: null, isAuthenticated: false });
+      },
+
+      setUser: (user: User) => {
+        localStorage.setItem('user', JSON.stringify(user));
+        set({ user });
       },
 
       updateProfile: async (userId: number, data: Partial<User>) => {

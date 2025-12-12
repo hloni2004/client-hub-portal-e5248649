@@ -66,6 +66,7 @@ export interface Product {
   variants: ProductVariant[];
   images: string[]; // Legacy: URLs or base64
   productImages?: ProductImage[]; // New: blob storage with IDs
+  primaryImage?: { imageId?: number; imageData?: string }; // Primary image with base64 data URL
   colours?: ProductColour[]; // Product colours from database
   isActive: boolean;
   isNew?: boolean;

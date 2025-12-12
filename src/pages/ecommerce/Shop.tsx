@@ -47,10 +47,10 @@ export default function Shop() {
   }, [categoryParam]);
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-ZA', {
       style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
+      currency: 'ZAR',
+      minimumFractionDigits: 2,
     }).format(price);
   };
 

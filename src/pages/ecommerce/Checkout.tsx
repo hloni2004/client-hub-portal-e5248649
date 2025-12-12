@@ -42,16 +42,16 @@ interface CartItem {
   product: {
     productId: number;
     name: string;
+    basePrice: number;
     primaryImage?: { imageData: string };
   };
   colour: {
     colourId: number;
-    colour: string;
+    name: string;
   };
-  colourSize: {
-    colourSizeId: number;
-    size: string;
-    price: number;
+  size: {
+    sizeId: number;
+    sizeName: string;
   };
   quantity: number;
 }
@@ -86,7 +86,7 @@ export default function Checkout() {
 
   useEffect(() => {
     if (!user) {
-      navigate('/login');
+      navigate('/auth/login');
       return;
     }
     loadCheckoutData();
@@ -96,28 +96,31 @@ export default function Checkout() {
     setLoading(true);
     try {
       // Load shipping methods
-      const methodsRes = await apiClient.get('/api/checkout/shipping-methods');
-      setShippingMethods(methodsRes.data);
-      if (methodsRes.data.length > 0) {
+      const methodsRes = await apiClient.get('/checkout/shipping-methods');
+      console.log('Shipping methods response:', methodsRes.data);
+      setShippingMethods(methodsRes.data || []);
+      if (methodsRes.data && methodsRes.data.length > 0 && methodsRes.data[0].methodId) {
         setSelectedMethod(methodsRes.data[0].methodId.toString());
       }
 
       // Load cart items
-      const cartRes = await apiClient.get(`/api/checkout/cart/${user?.userId}`);
+      const cartRes = await apiClient.get(`/checkout/cart/${user?.userId}`);
+      console.log('Cart response:', cartRes.data);
       setCartItems(cartRes.data.items || []);
 
       // Load saved addresses
-      const addressRes = await apiClient.get(`/api/checkout/addresses/user/${user?.userId}`);
-      setSavedAddresses(addressRes.data);
-      if (addressRes.data.length > 0) {
+      const addressRes = await apiClient.get(`/checkout/addresses/user/${user?.userId}`);
+      setSavedAddresses(addressRes.data || []);
+      if (addressRes.data && addressRes.data.length > 0 && addressRes.data[0].addressId) {
         setUseNewAddress(false);
         setSelectedAddressId(addressRes.data[0].addressId.toString());
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load checkout data:', error);
+      console.error('Error response:', error.response?.data);
       toast({
         title: 'Error',
-        description: 'Failed to load checkout data',
+        description: error.response?.data?.message || error.message || 'Failed to load checkout data',
         variant: 'destructive',
       });
     } finally {
@@ -126,7 +129,7 @@ export default function Checkout() {
   };
 
   const calculateSubtotal = () => {
-    return cartItems.reduce((sum, item) => sum + (item.quantity * item.colourSize.price), 0);
+    return cartItems.reduce((sum, item) => sum + (item.quantity * item.product.basePrice), 0);
   };
 
   const getShippingCost = () => {
@@ -176,30 +179,40 @@ export default function Checkout() {
 
       // If using new address, create it first
       if (useNewAddress) {
-        const addressRes = await apiClient.post('/api/checkout/addresses', address);
+        const addressRes = await apiClient.post('/checkout/addresses', address);
         addressId = addressRes.data.addressId;
       }
 
       // Create order
-      const orderRes = await apiClient.post('/api/checkout/create-order', {
+      const orderRes = await apiClient.post('/checkout/create-order', {
         userId: user?.userId,
         shippingMethodId: parseInt(selectedMethod),
         shippingAddressId: parseInt(addressId),
       });
 
+      // Clear cart after successful order
+      setCartItems([]);
+      
       toast({
-        title: 'Success',
-        description: `Order ${orderRes.data.orderNumber} placed successfully!`,
+        title: '🎉 Order Placed Successfully!',
+        description: `Order ${orderRes.data.orderNumber} has been placed. Check your email (${user?.email}) for confirmation and invoice.`,
+        duration: 6000,
       });
 
       // Navigate to order confirmation or orders page
-      navigate('/orders');
+      setTimeout(() => navigate('/orders'), 2000);
     } catch (error: any) {
       console.error('Failed to place order:', error);
+      console.error('Error response:', error.response?.data);
+      
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to place order';
+      const errorType = error.response?.data?.errorType || '';
+      
       toast({
         title: 'Error',
-        description: error.response?.data?.error || 'Failed to place order',
+        description: `${errorMessage}${errorType ? ` (${errorType})` : ''}`,
         variant: 'destructive',
+        duration: 8000,
       });
     } finally {
       setSubmitting(false);
@@ -208,6 +221,8 @@ export default function Checkout() {
 
   const getProductImageUrl = (imageData?: string) => {
     if (!imageData) return '/images/placeholder.png';
+    // Backend now sends full data URL with prefix
+    if (imageData.startsWith('data:')) return imageData;
     return `data:image/jpeg;base64,${imageData}`;
   };
 
@@ -247,7 +262,8 @@ export default function Checkout() {
       <Header />
       <div className="pt-32 pb-20">
         <div className="container-luxury">
-          <h1 className="font-display text-4xl md:text-5xl text-center mb-12">Checkout</h1>
+          <h1 className="font-display text-4xl md:text-5xl text-center mb-4">Checkout</h1>
+          <p className="text-muted-foreground text-center mb-12">Enter your shipping details to complete your order</p>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Shipping Method & Address */}
@@ -283,13 +299,13 @@ export default function Checkout() {
           </Card>
 
           {/* Delivery Address */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Delivery Address
+          <Card className="border-2">
+            <CardHeader className="bg-muted/30">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <MapPin className="h-6 w-6" />
+                Shipping Details
               </CardTitle>
-              <CardDescription>Where should we deliver your order?</CardDescription>
+              <CardDescription>Enter where you want your order delivered</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {savedAddresses.length > 0 && (
@@ -444,12 +460,12 @@ export default function Checkout() {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{item.product.name}</p>
                       <p className="text-xs text-gray-600">
-                        {item.colour.colour} / {item.colourSize.size}
+                        {item.colour.name} / {item.size.sizeName}
                       </p>
                       <p className="text-xs text-gray-600">Qty: {item.quantity}</p>
                     </div>
                     <p className="font-semibold text-sm">
-                      R{(item.quantity * item.colourSize.price).toFixed(2)}
+                      R{(item.quantity * item.product.basePrice).toFixed(2)}
                     </p>
                   </div>
                 ))}

@@ -8,7 +8,7 @@ interface CartState {
   itemCount: number;
   isOpen: boolean;
   
-  addItem: (product: Product, quantity: number, colorId?: number, sizeId?: number) => void;
+  addItem: (product: Product, quantity: number, colorId?: number, sizeId?: number) => Promise<{ success: boolean; message?: string }>;
   removeItem: (itemId: number) => void;
   updateQuantity: (itemId: number, quantity: number) => void;
   clearCart: () => void;
@@ -26,6 +26,40 @@ export const useCartStore = create<CartState>()(
       isOpen: false,
 
       addItem: async (product: Product, quantity: number, colorId?: number, sizeId?: number) => {
+        // Save to backend first if user is logged in to validate stock
+        try {
+          const userStr = localStorage.getItem('user');
+          if (userStr) {
+            const user = JSON.parse(userStr);
+            const apiClient = (await import('@/lib/api')).default;
+            const response = await apiClient.post('/carts/add-item', {
+              userId: user.userId,
+              productId: product.id,
+              colourId: colorId,
+              sizeId: sizeId,
+              quantity: quantity
+            });
+            
+            // Check if backend returned an error
+            if (response.data && !response.data.success) {
+              return { 
+                success: false, 
+                message: response.data.message 
+              };
+            }
+          }
+        } catch (error: any) {
+          console.error('Error saving to cart:', error);
+          // Check if it's a stock error
+          if (error.response?.data?.message) {
+            return { 
+              success: false, 
+              message: error.response.data.message 
+            };
+          }
+        }
+
+        // Update local state
         const items = get().items;
         const existingIndex = items.findIndex(
           item => item.productId === product.id && item.colorId === colorId && item.sizeId === sizeId
@@ -58,25 +92,8 @@ export const useCartStore = create<CartState>()(
         const itemCount = newItems.reduce((sum, item) => sum + item.quantity, 0);
 
         set({ items: newItems, subtotal, itemCount, isOpen: true });
-
-        // Save to backend if user is logged in
-        try {
-          const userStr = localStorage.getItem('user');
-          if (userStr) {
-            const user = JSON.parse(userStr);
-            const apiClient = (await import('@/lib/api')).default;
-            await apiClient.post('/carts/add-item', {
-              userId: user.userId,
-              productId: product.id,
-              colourId: colorId,
-              sizeId: sizeId,
-              quantity: quantity
-            });
-          }
-        } catch (error) {
-          console.error('Error saving to cart:', error);
-          // Continue anyway - item is saved in localStorage
-        }
+        
+        return { success: true };
       },
 
       removeItem: (itemId: number) => {

@@ -42,14 +42,14 @@ export default function ProductDetail() {
   }, [id]);
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-ZA', {
       style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
+      currency: 'ZAR',
+      minimumFractionDigits: 2,
     }).format(price);
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!currentProduct?.colours || currentProduct.colours.length === 0) {
       toast({ title: 'Product has no color options', variant: 'destructive' });
       return;
@@ -65,13 +65,32 @@ export default function ProductDetail() {
       return;
     }
     
+    // Check available stock
+    const availableStock = selectedSize.stockQuantity - (selectedSize.reservedQuantity || 0);
+    if (quantity > availableStock) {
+      toast({ 
+        title: 'Insufficient stock', 
+        description: `Only ${availableStock} items available in stock.`,
+        variant: 'destructive'
+      });
+      return;
+    }
+    
     if (currentProduct) {
       // Add item with proper IDs from database
-      addItem(currentProduct, quantity, selectedColor.colourId, selectedSize.sizeId);
-      toast({ 
-        title: 'Added to bag', 
-        description: `${currentProduct.name} (${selectedColor.name}, ${selectedSize.sizeName}) has been added to your bag.` 
-      });
+      const result = await addItem(currentProduct, quantity, selectedColor.colourId, selectedSize.sizeId);
+      if (result.success) {
+        toast({ 
+          title: 'Added to bag', 
+          description: `${currentProduct.name} (${selectedColor.name}, ${selectedSize.sizeName}) has been added to your bag.` 
+        });
+      } else {
+        toast({ 
+          title: 'Unable to add to cart', 
+          description: result.message || 'Please try again.',
+          variant: 'destructive'
+        });
+      }
     }
   };
 
@@ -298,8 +317,14 @@ export default function ProductDetail() {
                 </button>
                 <span className="w-12 text-center">{quantity}</span>
                 <button
-                  onClick={() => setQuantity(q => q + 1)}
-                  className="w-12 h-14 flex items-center justify-center hover:bg-muted transition-colors"
+                  onClick={() => {
+                    const availableStock = selectedSize 
+                      ? selectedSize.stockQuantity - (selectedSize.reservedQuantity || 0)
+                      : 99;
+                    setQuantity(q => Math.min(availableStock, q + 1));
+                  }}
+                  disabled={!selectedSize}
+                  className="w-12 h-14 flex items-center justify-center hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus className="h-4 w-4" />
                 </button>
@@ -312,6 +337,11 @@ export default function ProductDetail() {
                 Add to Bag
               </Button>
             </div>
+            {selectedSize && (
+              <p className="text-sm text-muted-foreground">
+                {selectedSize.stockQuantity - (selectedSize.reservedQuantity || 0)} items available in stock
+              </p>
+            )}
 
             {/* Actions */}
             <div className="flex gap-6 pt-4 border-t border-border">
@@ -373,10 +403,10 @@ export default function ProductDetail() {
             </TabsContent>
             <TabsContent value="shipping" className="py-8">
               <div className="space-y-4 text-muted-foreground">
-                <p>We offer complimentary shipping on all orders over $500.</p>
-                <p><strong className="text-foreground">Standard Delivery:</strong> 5-7 business days</p>
-                <p><strong className="text-foreground">Express Delivery:</strong> 2-3 business days (+$25)</p>
-                <p><strong className="text-foreground">Same Day Delivery:</strong> Available in select cities (+$50)</p>
+                <p>We offer complimentary shipping on all orders over R500.</p>
+                <p><strong className="text-foreground">Standard Delivery:</strong> 5-7 business days (Complimentary)</p>
+                <p><strong className="text-foreground">Express Delivery:</strong> 2-3 business days (+R25)</p>
+                <p><strong className="text-foreground">Same Day Delivery:</strong> Available in select cities (+R50)</p>
                 <p className="mt-6">All items are shipped in our signature luxury packaging with complimentary gift wrapping.</p>
               </div>
             </TabsContent>

@@ -18,11 +18,11 @@ interface OrderItem {
   };
   colour: {
     colourId: number;
-    colour: string;
+    name: string;
   };
   colourSize: {
     colourSizeId: number;
-    size: string;
+    sizeName: string;
   };
   quantity: number;
   price: number;
@@ -71,7 +71,7 @@ export default function Orders() {
   const loadOrders = async () => {
     setLoading(true);
     try {
-      const response = await apiClient.get(`/api/orders/user/${user?.userId}`);
+      const response = await apiClient.get(`/orders/user/${user?.userId}`);
       // Handle both wrapped and unwrapped response formats
       const ordersData = response.data.data || response.data;
       setOrders(ordersData);
@@ -97,6 +97,8 @@ export default function Orders() {
 
   const getProductImageUrl = (imageData?: string) => {
     if (!imageData) return '/images/placeholder.png';
+    // Backend now sends full data URL with prefix
+    if (imageData.startsWith('data:')) return imageData;
     return `data:image/jpeg;base64,${imageData}`;
   };
 
@@ -174,7 +176,7 @@ export default function Orders() {
                     <div className="flex-1">
                       <p className="font-semibold">{item.product.name}</p>
                       <p className="text-sm text-gray-600">
-                        {item.colour.colour} / {item.colourSize.size}
+                        {item.colour.name} / {item.colourSize.sizeName}
                       </p>
                       <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
                     </div>

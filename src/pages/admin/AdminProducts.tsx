@@ -95,6 +95,18 @@ export default function AdminProducts() {
 
   return (
     <div className="container mx-auto py-8">
+      <div className="mb-6 flex items-center gap-4">
+        <Button variant="ghost" onClick={() => navigate('/admin/dashboard')}>
+          Dashboard
+        </Button>
+        <Button variant="ghost" onClick={() => navigate('/admin/products')}>
+          Products
+        </Button>
+        <Button variant="ghost" onClick={() => navigate('/admin/categories')}>
+          Categories
+        </Button>
+      </div>
+
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -166,7 +178,7 @@ export default function AdminProducts() {
                         <TableCell className="font-medium">{product.name}</TableCell>
                         <TableCell>{product.sku}</TableCell>
                         <TableCell>{product.category?.name || 'N/A'}</TableCell>
-                        <TableCell>${product.basePrice.toFixed(2)}</TableCell>
+                        <TableCell>R{product.basePrice.toFixed(2)}</TableCell>
                         <TableCell>
                           <Badge variant={product.isActive ? 'default' : 'secondary'}>
                             {product.isActive ? 'Active' : 'Inactive'}

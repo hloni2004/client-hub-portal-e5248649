@@ -8,10 +8,10 @@ export default function Cart() {
   const { items, subtotal, updateQuantity, removeItem, clearCart } = useCartStore();
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-ZA', {
       style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
+      currency: 'ZAR',
+      minimumFractionDigits: 2,
     }).format(price);
   };
 
@@ -45,7 +45,11 @@ export default function Cart() {
                 {items.map(item => (
                   <div key={item.id} className="flex gap-6 pb-6 border-b border-border">
                     <Link to={`/product/${item.productId}`} className="w-32 aspect-[3/4] flex-shrink-0 overflow-hidden bg-muted">
-                      <img src={item.product.images[0]} alt={item.product.name} className="w-full h-full object-cover" />
+                      <img 
+                        src={item.product.primaryImage?.imageData || item.product.images?.[0] || '/images/placeholder.png'} 
+                        alt={item.product.name} 
+                        className="w-full h-full object-cover" 
+                      />
                     </Link>
                     <div className="flex-1">
                       <div className="flex justify-between mb-2">

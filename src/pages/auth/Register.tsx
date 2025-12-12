@@ -23,7 +23,13 @@ const registerSchema = z
       .regex(/[a-z]/, 'Must contain lowercase letter')
       .regex(/[0-9]/, 'Must contain number'),
     confirmPassword: z.string(),
-    phone: z.string().optional(),
+    phone: z.string().min(10, 'Phone number is required'),
+    addressLine1: z.string().min(5, 'Address is required'),
+    addressLine2: z.string().optional(),
+    city: z.string().min(2, 'City is required'),
+    province: z.string().min(2, 'Province is required'),
+    postalCode: z.string().min(4, 'Postal code is required'),
+    country: z.string().default('South Africa'),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
@@ -112,7 +118,7 @@ export default function Register() {
               {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone (Optional)</Label>
+              <Label htmlFor="phone">Phone</Label>
               <Input
                 id="phone"
                 type="tel"
@@ -122,6 +128,78 @@ export default function Register() {
               />
               {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
             </div>
+
+            {/* Address Section */}
+            <div className="pt-4 border-t">
+              <h3 className="text-lg font-semibold mb-4">Shipping Address</h3>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="addressLine1">Address Line 1</Label>
+                  <Input
+                    id="addressLine1"
+                    placeholder="123 Main Street"
+                    {...registerField('addressLine1')}
+                    disabled={isLoading}
+                  />
+                  {errors.addressLine1 && <p className="text-sm text-destructive">{errors.addressLine1.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="addressLine2">Address Line 2 (Optional)</Label>
+                  <Input
+                    id="addressLine2"
+                    placeholder="Apartment, suite, etc."
+                    {...registerField('addressLine2')}
+                    disabled={isLoading}
+                  />
+                  {errors.addressLine2 && <p className="text-sm text-destructive">{errors.addressLine2.message}</p>}
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      placeholder="Johannesburg"
+                      {...registerField('city')}
+                      disabled={isLoading}
+                    />
+                    {errors.city && <p className="text-sm text-destructive">{errors.city.message}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="province">Province</Label>
+                    <Input
+                      id="province"
+                      placeholder="Gauteng"
+                      {...registerField('province')}
+                      disabled={isLoading}
+                    />
+                    {errors.province && <p className="text-sm text-destructive">{errors.province.message}</p>}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="postalCode">Postal Code</Label>
+                    <Input
+                      id="postalCode"
+                      placeholder="2000"
+                      {...registerField('postalCode')}
+                      disabled={isLoading}
+                    />
+                    {errors.postalCode && <p className="text-sm text-destructive">{errors.postalCode.message}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="country">Country</Label>
+                    <Input
+                      id="country"
+                      defaultValue="South Africa"
+                      {...registerField('country')}
+                      disabled={isLoading}
+                    />
+                    {errors.country && <p className="text-sm text-destructive">{errors.country.message}</p>}
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
