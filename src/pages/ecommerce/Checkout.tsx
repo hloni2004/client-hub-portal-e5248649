@@ -104,9 +104,33 @@ export default function Checkout() {
       }
 
       // Load cart items
-      const cartRes = await apiClient.get(`/checkout/cart/${user?.userId}`);
-      console.log('Cart response:', cartRes.data);
-      setCartItems(cartRes.data.items || []);
+      try {
+        const cartRes = await apiClient.get(`/checkout/cart/${user?.userId}`);
+        console.log('Cart response:', cartRes.data);
+        const items = cartRes.data.items || [];
+        
+        // If cart is empty, redirect to cart page
+        if (items.length === 0) {
+          toast({
+            title: 'Cart is empty',
+            description: 'Add some items to your cart before checking out',
+          });
+          navigate('/cart');
+          return;
+        }
+        
+        setCartItems(items);
+      } catch (cartError: any) {
+        // Cart not found (likely deleted after previous order)
+        console.error('Cart error:', cartError);
+        toast({
+          title: 'Cart is empty',
+          description: 'Add some items to your cart before checking out',
+        });
+        setLoading(false);
+        navigate('/cart');
+        return;
+      }
 
       // Load saved addresses
       const addressRes = await apiClient.get(`/checkout/addresses/user/${user?.userId}`);
@@ -123,6 +147,8 @@ export default function Checkout() {
         description: error.response?.data?.message || error.message || 'Failed to load checkout data',
         variant: 'destructive',
       });
+      // Redirect to cart if there's an error
+      navigate('/cart');
     } finally {
       setLoading(false);
     }
@@ -192,6 +218,8 @@ export default function Checkout() {
 
       // Clear cart after successful order
       setCartItems([]);
+      // Also clear from global cart store
+      await apiClient.post(`/cart/clear/${user?.userId}`);
       
       toast({
         title: '🎉 Order Placed Successfully!',

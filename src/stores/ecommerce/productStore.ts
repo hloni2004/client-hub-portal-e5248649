@@ -19,6 +19,7 @@ interface ProductState {
   currentProduct: Product | null;
   filters: ProductFilters;
   loading: boolean;
+  categoriesLoading: boolean;
   error: string | null;
   
   fetchProducts: () => Promise<void>;
@@ -28,6 +29,7 @@ interface ProductState {
   setFilters: (filters: ProductFilters) => void;
   clearFilters: () => void;
   searchProducts: (query: string) => Promise<void>;
+  searchSuggestions: (query: string) => Promise<Product[]>;
 }
 
 // Mock data for development
@@ -153,6 +155,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
   currentProduct: null,
   filters: {},
   loading: false,
+  categoriesLoading: false,
   error: null,
 
   fetchProducts: async () => {
@@ -245,12 +248,45 @@ export const useProductStore = create<ProductState>((set, get) => ({
   },
 
   fetchCategories: async () => {
+    const { categoriesLoading, categories } = get();
+    
+    // Prevent duplicate fetches and avoid re-fetching if already loaded
+    if (categoriesLoading || categories.length > 0) {
+      return;
+    }
+    
+    set({ categoriesLoading: true });
     try {
-      // const response = await apiClient.get('/categories/getAll');
-      // set({ categories: response.data });
-      set({ categories: mockCategories });
+      const response = await apiClient.get('/categories/getAll');
+      const categoriesData = response.data?.data || response.data;
+      
+      // Map backend categories to frontend Category interface and ensure uniqueness
+      const mappedCategories = Array.isArray(categoriesData) 
+        ? categoriesData
+            .map((cat: any) => ({
+              id: cat.categoryId,
+              name: cat.name,
+              description: cat.description,
+              image: cat.imageUrl,
+              parentId: cat.parentCategory?.categoryId,
+              children: cat.subCategory?.map((sub: any) => ({
+                id: sub.categoryId,
+                name: sub.name,
+                description: sub.description,
+                image: sub.imageUrl,
+                isActive: sub.isActive,
+              })),
+              isActive: cat.isActive,
+            }))
+            .filter((category, index, self) => 
+              index === self.findIndex((c) => c.id === category.id)
+            )
+        : [];
+      
+      set({ categories: mappedCategories, categoriesLoading: false });
     } catch (error) {
-      set({ error: 'Failed to fetch categories' });
+      console.error('Failed to fetch categories:', error);
+      set({ error: 'Failed to fetch categories', categoriesLoading: false });
     }
   },
 
@@ -265,13 +301,30 @@ export const useProductStore = create<ProductState>((set, get) => ({
   searchProducts: async (query: string) => {
     set({ loading: true, error: null });
     try {
-      const filtered = mockProducts.filter(p => 
-        p.name.toLowerCase().includes(query.toLowerCase()) ||
-        p.description.toLowerCase().includes(query.toLowerCase())
-      );
-      set({ products: filtered, loading: false });
+      if (!query.trim()) {
+        await get().fetchProducts();
+        return;
+      }
+      const response = await apiClient.get('/products/search', { params: { query } });
+      const productsData = response.data?.data || response.data;
+      set({ products: Array.isArray(productsData) ? productsData : [], loading: false });
     } catch (error) {
+      console.error('Failed to search products:', error);
       set({ error: 'Failed to search products', loading: false });
+    }
+  },
+
+  searchSuggestions: async (query: string) => {
+    try {
+      if (!query.trim() || query.length < 2) {
+        return [];
+      }
+      const response = await apiClient.get('/products/search', { params: { query } });
+      const productsData = response.data?.data || response.data;
+      return Array.isArray(productsData) ? productsData.slice(0, 5) : [];
+    } catch (error) {
+      console.error('Failed to fetch suggestions:', error);
+      return [];
     }
   },
 }));

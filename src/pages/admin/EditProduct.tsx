@@ -374,7 +374,7 @@ export default function EditProduct() {
               <div className="flex items-center space-x-2">
                 <Switch
                   id="isActive"
-                  checked={watch('isActive')}
+                  checked={watch('isActive') ?? true}
                   onCheckedChange={(checked) => setValue('isActive', checked)}
                 />
                 <Label htmlFor="isActive" className="font-normal">Active</Label>

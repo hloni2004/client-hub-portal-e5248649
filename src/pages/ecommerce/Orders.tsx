@@ -72,11 +72,24 @@ export default function Orders() {
     setLoading(true);
     try {
       const response = await apiClient.get(`/orders/user/${user?.userId}`);
+      console.log('Orders API response:', response.data);
       // Handle both wrapped and unwrapped response formats
       const ordersData = response.data.data || response.data;
-      setOrders(ordersData);
+      console.log('Orders data:', ordersData);
+      
+      // Ensure ordersData is always an array
+      if (Array.isArray(ordersData)) {
+        setOrders(ordersData);
+      } else if (ordersData && typeof ordersData === 'object') {
+        // If it's a single object, wrap it in an array
+        setOrders([ordersData]);
+      } else {
+        // If it's null, undefined, or something else, set empty array
+        setOrders([]);
+      }
     } catch (error) {
       console.error('Failed to load orders:', error);
+      setOrders([]); // Set empty array on error
     } finally {
       setLoading(false);
     }

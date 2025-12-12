@@ -10,16 +10,30 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { useCartStore } from '@/stores/ecommerce/cartStore';
 import { useProductStore } from '@/stores/ecommerce/productStore';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'sonner';
+import { SearchWithAutocomplete } from './SearchWithAutocomplete';
+import { useState, useEffect } from 'react';
 
 export function Header() {
   const navigate = useNavigate();
   const { itemCount, openCart } = useCartStore();
-  const { categories } = useProductStore();
+  const { categories, fetchCategories } = useProductStore();
   const { user, logout } = useAuthStore();
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const handleSignOut = () => {
     logout();
@@ -68,9 +82,39 @@ export function Header() {
 
         {/* Actions */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="hidden md:flex">
-            <Search className="h-5 w-5" />
-          </Button>
+          {/* Desktop Search */}
+          <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="hidden md:flex">
+                <Search className="h-5 w-5" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Search Products</DialogTitle>
+              </DialogHeader>
+              <div className="py-4">
+                <SearchWithAutocomplete />
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Mobile Search */}
+          <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Search className="h-5 w-5" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Search Products</DialogTitle>
+              </DialogHeader>
+              <div className="py-4">
+                <SearchWithAutocomplete />
+              </div>
+            </DialogContent>
+          </Dialog>
           
           {/* User Profile Dropdown */}
           <DropdownMenu>

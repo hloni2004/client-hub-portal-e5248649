@@ -14,7 +14,7 @@ import { Header } from '@/components/ecommerce/Header';
 
 export default function Shop() {
   const [searchParams] = useSearchParams();
-  const { products, categories, fetchProducts, fetchCategories, loading } = useProductStore();
+  const { products, categories, fetchProducts, fetchCategories, loading, searchProducts } = useProductStore();
   const { addItem, itemCount } = useCartStore();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [priceRange, setPriceRange] = useState([0, 15000]);
@@ -23,6 +23,7 @@ export default function Shop() {
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
 
   const categoryParam = searchParams.get('category');
+  const searchParam = searchParams.get('search');
 
   // Helper to get product image URL
   const getProductImageUrl = (product: any) => {
@@ -39,12 +40,20 @@ export default function Shop() {
   };
 
   useEffect(() => {
-    fetchProducts();
     fetchCategories();
+  }, [fetchCategories]);
+
+  useEffect(() => {
+    if (searchParam) {
+      setSearchQuery(searchParam);
+      searchProducts(searchParam);
+    } else {
+      fetchProducts();
+    }
     if (categoryParam) {
       setSelectedCategories([parseInt(categoryParam)]);
     }
-  }, [categoryParam]);
+  }, [categoryParam, searchParam]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-ZA', {
@@ -86,13 +95,18 @@ export default function Shop() {
     }
   });
 
+  // Get unique categories by id to avoid duplicates
+  const uniqueCategories = categories.filter((category, index, self) => 
+    index === self.findIndex((c) => c.id === category.id)
+  );
+
   const FilterSidebar = () => (
     <div className="space-y-8">
       {/* Categories */}
       <div>
         <h3 className="text-sm tracking-wider uppercase mb-4 font-medium">Categories</h3>
         <div className="space-y-3">
-          {categories.map(category => (
+          {uniqueCategories.map(category => (
             <label key={category.id} className="flex items-center gap-3 cursor-pointer group">
               <Checkbox
                 checked={selectedCategories.includes(category.id)}
