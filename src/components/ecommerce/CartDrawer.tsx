@@ -37,7 +37,7 @@ export function CartDrawer() {
             <div className="flex-1 overflow-y-auto py-6 space-y-6">
               {items.map(item => (
                 <div key={item.id} className="flex gap-4">
-                  <Link to={`/product/${item.productId}`} onClick={closeCart} className="w-20 aspect-[3/4] flex-shrink-0 overflow-hidden bg-muted">
+                  <Link to={`/product/${item.productId}`} onClick={closeCart} className="w-24 h-32 flex-shrink-0 overflow-hidden bg-muted rounded">
                     <img 
                       src={item.product.primaryImage?.imageData || item.product.images?.[0] || '/images/placeholder.png'} 
                       alt={item.product.name} 

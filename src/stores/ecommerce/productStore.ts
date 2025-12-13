@@ -261,21 +261,25 @@ export const useProductStore = create<ProductState>((set, get) => ({
       const categoriesData = response.data?.data || response.data;
       
       // Map backend categories to frontend Category interface and ensure uniqueness
+      // Only include categories that are marked as active by admin
       const mappedCategories = Array.isArray(categoriesData) 
         ? categoriesData
+            .filter((cat: any) => cat.isActive === true) // Only active categories
             .map((cat: any) => ({
               id: cat.categoryId,
               name: cat.name,
               description: cat.description,
               image: cat.imageUrl,
               parentId: cat.parentCategory?.categoryId,
-              children: cat.subCategory?.map((sub: any) => ({
-                id: sub.categoryId,
-                name: sub.name,
-                description: sub.description,
-                image: sub.imageUrl,
-                isActive: sub.isActive,
-              })),
+              children: cat.subCategory
+                ?.filter((sub: any) => sub.isActive === true) // Only active subcategories
+                .map((sub: any) => ({
+                  id: sub.categoryId,
+                  name: sub.name,
+                  description: sub.description,
+                  image: sub.imageUrl,
+                  isActive: sub.isActive,
+                })),
               isActive: cat.isActive,
             }))
             .filter((category, index, self) => 

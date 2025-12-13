@@ -58,7 +58,7 @@ export default function Home() {
             Discover our curated collection of luxury fashion pieces, crafted by the world's finest artisans.
           </p>
           <Link to="/shop">
-            <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-foreground px-12 py-6 text-sm tracking-[0.2em] uppercase animate-fade-in" style={{ animationDelay: '0.6s' }}>
+            <Button variant="outline" size="lg" className="border-white text-white bg-white/10 hover:bg-white hover:text-foreground px-12 py-6 text-sm tracking-[0.2em] uppercase animate-fade-in" style={{ animationDelay: '0.6s' }}>
               Explore Collection
               <ArrowRight className="ml-3 h-4 w-4" />
             </Button>

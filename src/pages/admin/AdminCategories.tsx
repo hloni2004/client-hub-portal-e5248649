@@ -5,6 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/hooks/use-toast';
+import apiClient from '@/lib/api';
+import { useProductStore } from '@/stores/ecommerce/productStore';
 import {
   Dialog,
   DialogContent,
@@ -31,8 +34,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useToast } from '@/hooks/use-toast';
-import apiClient from '@/lib/api';
 
 interface Category {
   categoryId: number;
@@ -143,7 +144,12 @@ export default function AdminCategories() {
             title: 'Success',
             description: 'Category updated successfully',
           });
+          // Refresh both admin categories and product store categories
           fetchCategories();
+          // Clear the product store cache to refetch updated categories
+          const productStore = useProductStore.getState();
+          useProductStore.setState({ categories: [] });
+          productStore.fetchCategories();
           handleCloseDialog();
         }
       } else {
@@ -156,6 +162,10 @@ export default function AdminCategories() {
             description: 'Category created successfully',
           });
           fetchCategories();
+          // Clear the product store cache to refetch updated categories
+          const productStore = useProductStore.getState();
+          useProductStore.setState({ categories: [] });
+          productStore.fetchCategories();
           handleCloseDialog();
         }
       }
@@ -189,6 +199,10 @@ export default function AdminCategories() {
       });
       
       fetchCategories();
+      // Clear the product store cache to refetch updated categories
+      const productStore = useProductStore.getState();
+      useProductStore.setState({ categories: [] });
+      productStore.fetchCategories();
       setIsDeleteDialogOpen(false);
       setCategoryToDelete(null);
     } catch (error: any) {

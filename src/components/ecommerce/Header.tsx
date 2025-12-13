@@ -13,6 +13,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -92,6 +93,7 @@ export function Header() {
             <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle>Search Products</DialogTitle>
+                <DialogDescription>Find products by name, category, or brand</DialogDescription>
               </DialogHeader>
               <div className="py-4">
                 <SearchWithAutocomplete />
@@ -109,6 +111,7 @@ export function Header() {
             <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle>Search Products</DialogTitle>
+                <DialogDescription>Find products by name, category, or brand</DialogDescription>
               </DialogHeader>
               <div className="py-4">
                 <SearchWithAutocomplete />

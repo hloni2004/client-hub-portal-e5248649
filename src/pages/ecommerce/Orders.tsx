@@ -73,20 +73,72 @@ export default function Orders() {
     try {
       const response = await apiClient.get(`/orders/user/${user?.userId}`);
       console.log('Orders API response:', response.data);
+      
       // Handle both wrapped and unwrapped response formats
-      const ordersData = response.data.data || response.data;
-      console.log('Orders data:', ordersData);
+      let ordersData = response.data.data || response.data;
+      console.log('Orders data before processing:', ordersData);
       
       // Ensure ordersData is always an array
-      if (Array.isArray(ordersData)) {
-        setOrders(ordersData);
-      } else if (ordersData && typeof ordersData === 'object') {
-        // If it's a single object, wrap it in an array
-        setOrders([ordersData]);
-      } else {
-        // If it's null, undefined, or something else, set empty array
-        setOrders([]);
+      if (!Array.isArray(ordersData)) {
+        if (ordersData && typeof ordersData === 'object') {
+          // If it's a single object, wrap it in an array
+          ordersData = [ordersData];
+        } else {
+          // If it's null, undefined, or something else, set empty array
+          ordersData = [];
+        }
       }
+      
+      // Clean up orders to remove circular references
+      const cleanedOrders = ordersData.map((order: any) => {
+        // Remove circular references by extracting only the fields we need
+        const cleanOrder: Order = {
+          orderId: order.orderId,
+          orderNumber: order.orderNumber,
+          orderDate: order.orderDate,
+          status: order.status,
+          totalAmount: order.totalAmount,
+          subtotal: order.subtotal,
+          shippingCost: order.shippingCost,
+          taxAmount: order.taxAmount,
+          items: (order.items || []).map((item: any) => ({
+            orderItemId: item.orderItemId,
+            product: {
+              productId: item.product?.productId || 0,
+              name: item.product?.name || 'Unknown Product',
+              primaryImage: item.product?.primaryImage,
+            },
+            colour: {
+              colourId: item.colour?.colourId || 0,
+              name: item.colour?.name || 'N/A',
+            },
+            colourSize: {
+              colourSizeId: item.colourSize?.colourSizeId || 0,
+              sizeName: item.colourSize?.sizeName || 'N/A',
+            },
+            quantity: item.quantity || 0,
+            price: item.price || 0,
+            subtotal: item.subtotal || 0,
+          })),
+          shippingMethod: {
+            name: order.shippingMethod?.name || 'Standard',
+            estimatedDays: order.shippingMethod?.estimatedDays || 5,
+          },
+          shippingAddress: {
+            fullName: order.shippingAddress?.fullName || '',
+            phone: order.shippingAddress?.phone || '',
+            addressLine1: order.shippingAddress?.addressLine1 || '',
+            addressLine2: order.shippingAddress?.addressLine2 || '',
+            city: order.shippingAddress?.city || '',
+            province: order.shippingAddress?.province || '',
+            postalCode: order.shippingAddress?.postalCode || '',
+          },
+        };
+        return cleanOrder;
+      });
+      
+      console.log('Cleaned orders:', cleanedOrders);
+      setOrders(cleanedOrders);
     } catch (error) {
       console.error('Failed to load orders:', error);
       setOrders([]); // Set empty array on error

@@ -60,6 +60,7 @@ export default function Checkout() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuthStore();
+  const { clearCart } = useCartStore();
   
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -219,7 +220,12 @@ export default function Checkout() {
       // Clear cart after successful order
       setCartItems([]);
       // Also clear from global cart store
-      await apiClient.post(`/cart/clear/${user?.userId}`);
+      clearCart();
+      try {
+        await apiClient.post(`/cart/clear/${user?.userId}`);
+      } catch (error) {
+        console.error('Error clearing cart from backend:', error);
+      }
       
       toast({
         title: '🎉 Order Placed Successfully!',
