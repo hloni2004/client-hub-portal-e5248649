@@ -19,6 +19,7 @@ import EcommerceProfile from "./pages/ecommerce/Profile";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminOrders from "./pages/admin/AdminOrders";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminCategories from "./pages/admin/AdminCategories";
 import AddProduct from "./pages/admin/AddProduct";
@@ -54,6 +55,7 @@ const App = () => (
           {/* Protected Admin Routes */}
           <Route path="/admin" element={<ProtectedRoute requiredRole="ADMIN"><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/dashboard" element={<ProtectedRoute requiredRole="ADMIN"><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/orders" element={<ProtectedRoute requiredRole="ADMIN"><AdminOrders /></ProtectedRoute>} />
           <Route path="/admin/products" element={<ProtectedRoute requiredRole="ADMIN"><AdminProducts /></ProtectedRoute>} />
           <Route path="/admin/products/add" element={<ProtectedRoute requiredRole="ADMIN"><AddProduct /></ProtectedRoute>} />
           <Route path="/admin/products/edit/:id" element={<ProtectedRoute requiredRole="ADMIN"><EditProduct /></ProtectedRoute>} />

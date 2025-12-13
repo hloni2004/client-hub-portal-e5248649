@@ -102,6 +102,9 @@ export default function AdminProducts() {
         <Button variant="ghost" onClick={() => navigate('/admin/products')}>
           Products
         </Button>
+        <Button variant="ghost" onClick={() => navigate('/admin/orders')}>
+          Orders
+        </Button>
         <Button variant="ghost" onClick={() => navigate('/admin/categories')}>
           Categories
         </Button>

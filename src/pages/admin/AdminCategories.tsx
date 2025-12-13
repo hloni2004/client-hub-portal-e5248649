@@ -234,6 +234,9 @@ export default function AdminCategories() {
         <Button variant="ghost" onClick={() => window.location.href = '/admin/products'}>
           Products
         </Button>
+        <Button variant="ghost" onClick={() => window.location.href = '/admin/orders'}>
+          Orders
+        </Button>
         <Button variant="ghost" onClick={() => window.location.href = '/admin/categories'}>
           Categories
         </Button>

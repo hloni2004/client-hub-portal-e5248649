@@ -127,6 +127,10 @@ export default function AdminDashboard() {
               <Package className="mr-2 h-4 w-4" />
               Manage Products
             </Button>
+            <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/admin/orders')}>
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              Manage Orders
+            </Button>
             <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/admin/categories')}>
               <FolderTree className="mr-2 h-4 w-4" />
               Manage Categories
