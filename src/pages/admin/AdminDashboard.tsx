@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import apiClient from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
+import LowStockNotification from '@/components/admin/LowStockNotification';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -87,10 +88,13 @@ export default function AdminDashboard() {
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
           <p className="text-muted-foreground">Manage your e-commerce store</p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchStats} className="gap-2">
-          <RefreshCw className="h-4 w-4" />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <LowStockNotification />
+          <Button variant="outline" size="sm" onClick={fetchStats} className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
