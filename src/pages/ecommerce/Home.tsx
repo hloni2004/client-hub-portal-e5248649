@@ -1,19 +1,61 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, ArrowRight, Star } from 'lucide-react';
+import { ArrowRight, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useProductStore } from '@/stores/ecommerce/productStore';
 import { useCartStore } from '@/stores/ecommerce/cartStore';
+import { Header } from '@/components/ecommerce/Header';
+import apiClient from '@/lib/api';
 
 export default function Home() {
   const { featuredProducts, categories, fetchProducts, fetchCategories } = useProductStore();
   const { addItem } = useCartStore();
+  const [categoryProducts, setCategoryProducts] = useState<Record<number, any[]>>({});
 
   useEffect(() => {
     fetchProducts();
     fetchCategories();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    // Fetch products for each category when categories are loaded
+    if (categories.length > 0) {
+      console.log('Categories loaded:', categories);
+      fetchCategoryProducts();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categories]);
+
+  const fetchCategoryProducts = async () => {
+    const productsMap: Record<number, any[]> = {};
+    
+    for (const category of categories.slice(0, 4)) {
+      try {
+        const response = await apiClient.get(`/products/category/${category.id}`);
+        const products = response.data?.data || response.data || [];
+        console.log(`Products for category ${category.name}:`, products);
+        
+        // Get active products from the category
+        const activeProducts = Array.isArray(products) 
+          ? products.filter((p: any) => p.isActive === true) 
+          : [];
+        
+        // Store the first active product for this category
+        if (activeProducts.length > 0) {
+          productsMap[category.id] = activeProducts.slice(0, 1);
+        } else {
+          productsMap[category.id] = [];
+        }
+      } catch (error) {
+        console.error(`Error fetching products for category ${category.id}:`, error);
+        productsMap[category.id] = [];
+      }
+    }
+    
+    console.log('Category products map:', productsMap);
+    setCategoryProducts(productsMap);
+  };
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-ZA', {
@@ -26,25 +68,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
-        <div className="container-luxury flex items-center justify-between h-20">
-          <Link to="/" className="font-display text-2xl tracking-widest">
-            MAISON LUXE
-          </Link>
-          <nav className="hidden md:flex items-center gap-10">
-            {categories.slice(0, 4).map(cat => (
-              <Link key={cat.id} to={`/shop?category=${cat.id}`} className="text-sm tracking-wider uppercase link-underline">
-                {cat.name}
-              </Link>
-            ))}
-          </nav>
-          <div className="flex items-center gap-6">
-            <Link to="/cart" className="relative">
-              <ShoppingBag className="h-5 w-5" />
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center gradient-hero text-white overflow-hidden">
@@ -74,22 +98,102 @@ export default function Home() {
             <h2 className="font-display text-4xl md:text-5xl">Shop by Category</h2>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-            {categories.slice(0, 4).map((category, index) => (
-              <Link
-                key={category.id}
-                to={`/shop?category=${category.id}`}
-                className="group relative aspect-[3/4] overflow-hidden bg-muted animate-fade-in"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <div className="absolute inset-0 bg-foreground/20 group-hover:bg-foreground/40 transition-all duration-500" />
-                <div className="absolute inset-0 flex items-end p-6">
-                  <div>
-                    <h3 className="font-display text-xl md:text-2xl text-white mb-1">{category.name}</h3>
-                    <p className="text-white/70 text-sm">{category.productCount} items</p>
-                  </div>
-                </div>
-              </Link>
-            ))}
+            {categories.length === 0 ? (
+              // Loading placeholder
+              <>
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="relative aspect-[3/4] overflow-hidden bg-muted rounded-lg animate-pulse" />
+                ))}
+              </>
+            ) : (
+              categories.slice(0, 4).map((category, index) => {
+                const product = categoryProducts[category.id]?.[0];
+                
+                // High-quality fashion images for each category type
+                const defaultCategoryImages: Record<string, string> = {
+                  'Dresses': 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=800&q=80&fit=crop',
+                  'Tops': 'https://images.unsplash.com/photo-1618932260643-eee4a2f652a6?w=800&q=80&fit=crop',
+                  'Bottoms': 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&q=80&fit=crop',
+                  'Outerwear': 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800&q=80&fit=crop',
+                  'Accessories': 'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=800&q=80&fit=crop',
+                  'Shoes': 'https://images.unsplash.com/photo-1603808033192-082d6919d3e1?w=800&q=80&fit=crop',
+                  'Jewelry': 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&q=80&fit=crop',
+                  'Bags': 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=800&q=80&fit=crop',
+                  'Activewear': 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80&fit=crop',
+                  'Swimwear': 'https://images.unsplash.com/photo-1523359346063-d879354c0ea5?w=800&q=80&fit=crop',
+                };
+                
+                // Default fallback image
+                const defaultImage = 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800&q=80&fit=crop';
+                
+                // Try to get image URL - prioritize product images from database
+                let imageUrl = defaultCategoryImages[category.name] || category.image || defaultImage;
+                
+                // If we have a product with images from database, use that instead
+                if (product) {
+                  console.log(`Product for category ${category.name}:`, product);
+                  
+                  // Try product.images array (blob-based images from database)
+                  if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+                    const img = product.images[0];
+                    
+                    // Handle blob data - convert to base64 data URL
+                    if (img.imageData) {
+                      imageUrl = `data:image/jpeg;base64,${img.imageData}`;
+                      console.log(`Using database blob image for ${category.name}`);
+                    } else if (img.imageUrl) {
+                      imageUrl = img.imageUrl;
+                      console.log(`Using imageUrl for ${category.name}:`, imageUrl);
+                    } else if (typeof img === 'string') {
+                      imageUrl = img;
+                    }
+                  }
+                  // Try productImages if images doesn't exist
+                  else if (product.productImages && Array.isArray(product.productImages) && product.productImages.length > 0) {
+                    const img = product.productImages[0];
+                    
+                    if (img.imageData) {
+                      imageUrl = `data:image/jpeg;base64,${img.imageData}`;
+                      console.log(`Using database blob from productImages for ${category.name}`);
+                    } else if (img.imageUrl) {
+                      imageUrl = img.imageUrl;
+                    } else if (typeof img === 'string') {
+                      imageUrl = img;
+                    }
+                  }
+                }
+                
+                return (
+                  <Link
+                    key={category.id}
+                    to={`/shop?category=${category.id}`}
+                    className="group relative aspect-[3/4] overflow-hidden bg-gray-200 animate-fade-in rounded-lg shadow-lg"
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                  >
+                    <img
+                      src={imageUrl}
+                      alt={category.name}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      loading="eager"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        console.error(`Image failed for ${category.name}, using fallback`);
+                        target.src = defaultCategoryImages[category.name] || defaultImage;
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent group-hover:from-black/80 transition-all duration-500" />
+                    <div className="absolute inset-0 flex items-end p-6">
+                      <div className="text-left">
+                        <h3 className="font-display text-xl md:text-2xl text-white mb-1 font-semibold">{category.name}</h3>
+                        <p className="text-white/90 text-sm font-medium">
+                          Explore collection
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })
+            )}
           </div>
         </div>
       </section>

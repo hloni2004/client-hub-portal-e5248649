@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import apiClient from '@/lib/api';
-import { Loader2, Package, ShoppingBag } from 'lucide-react';
+import { Loader2, Package, ShoppingBag, Star, MessageSquare } from 'lucide-react';
 import { Header } from '@/components/ecommerce/Header';
 
 interface OrderItem {
@@ -232,22 +232,50 @@ export default function Orders() {
               {/* Order Items */}
               <div className="space-y-3">
                 {order.items.map((item) => (
-                  <div key={item.orderItemId} className="flex gap-4">
+                  <div key={item.orderItemId} className="flex gap-4 pb-3 border-b last:border-0">
                     <img
                       src={getProductImageUrl(item.product.primaryImage?.imageData)}
                       alt={item.product.name}
-                      className="w-20 h-20 object-cover rounded"
+                      className="w-20 h-20 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => navigate(`/product/${item.product.productId}`)}
                     />
                     <div className="flex-1">
-                      <p className="font-semibold">{item.product.name}</p>
+                      <p 
+                        className="font-semibold cursor-pointer hover:text-primary transition-colors"
+                        onClick={() => navigate(`/product/${item.product.productId}`)}
+                      >
+                        {item.product.name}
+                      </p>
                       <p className="text-sm text-gray-600">
                         {item.colour.name} / {item.colourSize.sizeName}
                       </p>
                       <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                      
+                      {/* Review Button */}
+                      {order.status === 'DELIVERED' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-2"
+                          onClick={() => navigate(`/product/${item.product.productId}#reviews`)}
+                        >
+                          <Star className="h-3 w-3 mr-1" />
+                          Write Review
+                        </Button>
+                      )}
                     </div>
                     <div className="text-right">
                       <p className="font-semibold">R{item.subtotal.toFixed(2)}</p>
                       <p className="text-sm text-gray-600">R{item.price.toFixed(2)} each</p>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="mt-2 p-0 h-auto text-xs"
+                        onClick={() => navigate(`/product/${item.product.productId}#reviews`)}
+                      >
+                        <MessageSquare className="h-3 w-3 mr-1" />
+                        See Reviews
+                      </Button>
                     </div>
                   </div>
                 ))}

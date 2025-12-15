@@ -141,11 +141,11 @@ const mockProducts: Product[] = [
 ];
 
 const mockCategories: Category[] = [
-  { id: 1, name: 'Evening Wear', description: 'Elegant attire for special occasions', isActive: true, productCount: 24 },
-  { id: 2, name: 'Outerwear', description: 'Premium coats and jackets', isActive: true, productCount: 18 },
-  { id: 3, name: 'Accessories', description: 'Luxury handbags and accessories', isActive: true, productCount: 32 },
-  { id: 4, name: 'Jewelry', description: 'Fine jewelry and timepieces', isActive: true, productCount: 15 },
-  { id: 5, name: 'Footwear', description: 'Handcrafted luxury footwear', isActive: true, productCount: 21 },
+  { id: 1, name: 'Dresses', description: 'Elegant dresses for every occasion', isActive: true, productCount: 24 },
+  { id: 2, name: 'Tops', description: 'Stylish tops and blouses', isActive: true, productCount: 18 },
+  { id: 3, name: 'Bottoms', description: 'Pants, skirts, and shorts', isActive: true, productCount: 32 },
+  { id: 4, name: 'Outerwear', description: 'Coats and jackets', isActive: true, productCount: 15 },
+  { id: 5, name: 'Accessories', description: 'Complete your look', isActive: true, productCount: 21 },
 ];
 
 export const useProductStore = create<ProductState>((set, get) => ({
@@ -250,8 +250,8 @@ export const useProductStore = create<ProductState>((set, get) => ({
   fetchCategories: async () => {
     const { categoriesLoading, categories } = get();
     
-    // Prevent duplicate fetches and avoid re-fetching if already loaded
-    if (categoriesLoading || categories.length > 0) {
+    // Prevent duplicate fetches only if loading or already successfully loaded
+    if (categoriesLoading) {
       return;
     }
     
@@ -260,26 +260,18 @@ export const useProductStore = create<ProductState>((set, get) => ({
       const response = await apiClient.get('/categories/getAll');
       const categoriesData = response.data?.data || response.data;
       
-      // Map backend categories to frontend Category interface and ensure uniqueness
-      // Only include categories that are marked as active by admin
+      console.log('Categories API response:', categoriesData);
+      
+      // Map backend categories to frontend Category interface
+      // Filter active categories and remove duplicates
       const mappedCategories = Array.isArray(categoriesData) 
         ? categoriesData
-            .filter((cat: any) => cat.isActive === true) // Only active categories
+            .filter((cat: any) => cat.isActive === true)
             .map((cat: any) => ({
               id: cat.categoryId,
               name: cat.name,
               description: cat.description,
               image: cat.imageUrl,
-              parentId: cat.parentCategory?.categoryId,
-              children: cat.subCategory
-                ?.filter((sub: any) => sub.isActive === true) // Only active subcategories
-                .map((sub: any) => ({
-                  id: sub.categoryId,
-                  name: sub.name,
-                  description: sub.description,
-                  image: sub.imageUrl,
-                  isActive: sub.isActive,
-                })),
               isActive: cat.isActive,
             }))
             .filter((category, index, self) => 
@@ -287,10 +279,16 @@ export const useProductStore = create<ProductState>((set, get) => ({
             )
         : [];
       
-      set({ categories: mappedCategories, categoriesLoading: false });
+      console.log('Mapped categories:', mappedCategories);
+      
+      // Use mock categories if API returns empty or use fetched categories
+      const finalCategories = mappedCategories.length > 0 ? mappedCategories : mockCategories;
+      
+      set({ categories: finalCategories, categoriesLoading: false });
     } catch (error) {
-      console.error('Failed to fetch categories:', error);
-      set({ error: 'Failed to fetch categories', categoriesLoading: false });
+      console.error('Failed to fetch categories, using mock data:', error);
+      // Use mock categories on error
+      set({ categories: mockCategories, categoriesLoading: false, error: null });
     }
   },
 

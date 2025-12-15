@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import apiClient from '@/lib/api';
-import { Loader2, MapPin, Package, Truck } from 'lucide-react';
+import { Loader2, MapPin, Package, Truck, Tag, X } from 'lucide-react';
 import { Header } from '@/components/ecommerce/Header';
 
 interface ShippingMethod {
@@ -70,6 +70,13 @@ export default function Checkout() {
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
   const [useNewAddress, setUseNewAddress] = useState(true);
+  
+  // Promo code state
+  const [promoCode, setPromoCode] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<any>(null);
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [applyingPromo, setApplyingPromo] = useState(false);
+  const [promoMessage, setPromoMessage] = useState('');
   
   const [address, setAddress] = useState<Address>({
     fullName: '',
@@ -165,11 +172,65 @@ export default function Checkout() {
   };
 
   const calculateTax = () => {
-    return calculateSubtotal() * 0.15; // 15% VAT
+    const subtotalAfterDiscount = calculateSubtotal() - promoDiscount;
+    return subtotalAfterDiscount * 0.15; // 15% VAT
   };
 
   const calculateTotal = () => {
-    return calculateSubtotal() + getShippingCost() + calculateTax();
+    return calculateSubtotal() - promoDiscount + getShippingCost() + calculateTax();
+  };
+
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim()) {
+      setPromoMessage('Please enter a promo code');
+      return;
+    }
+
+    setApplyingPromo(true);
+    setPromoMessage('');
+
+    try {
+      // Prepare product quantities map
+      const productQuantities: { [key: number]: number } = {};
+      cartItems.forEach(item => {
+        productQuantities[item.product.productId] = item.quantity;
+      });
+
+      const response = await apiClient.post('/promos/apply', {
+        code: promoCode.toUpperCase(),
+        userId: user?.userId,
+        productQuantities,
+        cartSubtotal: calculateSubtotal(),
+      });
+
+      if (response.data.applied) {
+        setAppliedPromo(response.data);
+        setPromoDiscount(response.data.discountAmount);
+        setPromoMessage(response.data.message);
+        toast({
+          title: 'Promo Applied!',
+          description: response.data.message,
+        });
+      } else {
+        setPromoMessage(response.data.message);
+        setAppliedPromo(null);
+        setPromoDiscount(0);
+      }
+    } catch (error: any) {
+      console.error('Error applying promo:', error);
+      setPromoMessage(error.response?.data?.message || 'Invalid promo code');
+      setAppliedPromo(null);
+      setPromoDiscount(0);
+    } finally {
+      setApplyingPromo(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setPromoCode('');
+    setAppliedPromo(null);
+    setPromoDiscount(0);
+    setPromoMessage('');
   };
 
   const handlePlaceOrder = async () => {
@@ -507,12 +568,67 @@ export default function Checkout() {
 
               <Separator />
 
+              {/* Promo Code Section */}
+              <div className="space-y-2">
+                <Label htmlFor="promoCode" className="flex items-center gap-2">
+                  <Tag className="h-4 w-4" />
+                  Promo Code
+                </Label>
+                {!appliedPromo ? (
+                  <div className="flex gap-2">
+                    <Input
+                      id="promoCode"
+                      placeholder="Enter code"
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                      onKeyPress={(e) => e.key === 'Enter' && handleApplyPromo()}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleApplyPromo}
+                      disabled={applyingPromo}
+                    >
+                      {applyingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Tag className="h-4 w-4 text-green-600" />
+                      <span className="font-mono font-bold text-green-600">{promoCode}</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRemovePromo}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+                {promoMessage && (
+                  <p className={`text-xs ${appliedPromo ? 'text-green-600' : 'text-red-600'}`}>
+                    {promoMessage}
+                  </p>
+                )}
+              </div>
+
+              <Separator />
+
               {/* Totals */}
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
                   <span>R{calculateSubtotal().toFixed(2)}</span>
                 </div>
+                {promoDiscount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Promo Discount</span>
+                    <span>-R{promoDiscount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span>Shipping</span>
                   <span>R{getShippingCost().toFixed(2)}</span>

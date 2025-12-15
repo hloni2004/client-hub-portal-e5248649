@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { Star, Minus, Plus, Heart, Share2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,23 +7,40 @@ import { useProductStore } from '@/stores/ecommerce/productStore';
 import { useCartStore } from '@/stores/ecommerce/cartStore';
 import { Header } from '@/components/ecommerce/Header';
 import { CartDrawer } from '@/components/ecommerce/CartDrawer';
+import { ProductReviewDialog } from '@/components/ecommerce/ProductReviewDialog';
+import { ProductReviews } from '@/components/ecommerce/ProductReviews';
+import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/hooks/use-toast';
-
-const mockReviews = [
-  { id: 1, userName: 'Alexandra M.', rating: 5, comment: 'Absolutely stunning piece. The craftsmanship is impeccable and it fits perfectly.', date: '2025-01-15', isVerified: true },
-  { id: 2, userName: 'James W.', rating: 5, comment: 'Exceeded my expectations. The quality of materials is exceptional.', date: '2025-01-10', isVerified: true },
-  { id: 3, userName: 'Sophie L.', rating: 4, comment: 'Beautiful design and excellent attention to detail. Worth every penny.', date: '2025-01-05', isVerified: true },
-];
+import apiClient from '@/lib/api';
 
 export default function ProductDetail() {
   const { id } = useParams();
+  const location = useLocation();
   const { currentProduct, fetchProductById, featuredProducts, loading } = useProductStore();
   const { addItem } = useCartStore();
+  const { user } = useAuthStore();
   const { toast } = useToast();
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState<any>(null);
   const [selectedSize, setSelectedSize] = useState<any>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [canReview, setCanReview] = useState(false);
+  const [reviewsKey, setReviewsKey] = useState(0);
+  const [activeTab, setActiveTab] = useState('details');
+
+  // Check if URL has #reviews hash and switch to reviews tab
+  useEffect(() => {
+    if (location.hash === '#reviews') {
+      setActiveTab('reviews');
+      // Scroll to tabs section after a short delay
+      setTimeout(() => {
+        const tabsElement = document.getElementById('product-tabs');
+        if (tabsElement) {
+          tabsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
+  }, [location]);
 
   // Set default color when product loads
   useEffect(() => {
@@ -38,8 +55,30 @@ export default function ProductDetail() {
   useEffect(() => {
     if (id) {
       fetchProductById(parseInt(id));
+      checkReviewEligibility();
     }
-  }, [id]);
+  }, [id, user]);
+
+  const checkReviewEligibility = async () => {
+    if (!user || !id) {
+      setCanReview(false);
+      return;
+    }
+
+    try {
+      const response = await apiClient.get(`/reviews/can-review/${user.userId}/${id}`);
+      console.log('Review eligibility response:', response.data);
+      setCanReview(response.data?.canReview || false);
+    } catch (error) {
+      console.error('Error checking review eligibility:', error);
+      setCanReview(false);
+    }
+  };
+
+  const handleReviewSubmitted = () => {
+    setReviewsKey(prev => prev + 1);
+    checkReviewEligibility();
+  };
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-ZA', {
@@ -356,14 +395,14 @@ export default function ProductDetail() {
         </div>
 
         {/* Tabs */}
-        <div className="mt-20">
-          <Tabs defaultValue="details" className="w-full">
+        <div id="product-tabs" className="mt-20">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full justify-start border-b border-border rounded-none bg-transparent p-0">
               <TabsTrigger value="details" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent px-6 py-4 text-sm tracking-wider uppercase">
                 Details
               </TabsTrigger>
               <TabsTrigger value="reviews" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent px-6 py-4 text-sm tracking-wider uppercase">
-                Reviews ({mockReviews.length})
+                Reviews
               </TabsTrigger>
               <TabsTrigger value="shipping" className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent px-6 py-4 text-sm tracking-wider uppercase">
                 Shipping
@@ -381,24 +420,16 @@ export default function ProductDetail() {
               </div>
             </TabsContent>
             <TabsContent value="reviews" className="py-8">
-              <div className="space-y-8">
-                {mockReviews.map(review => (
-                  <div key={review.id} className="pb-8 border-b border-border last:border-0">
-                    <div className="flex items-center gap-4 mb-3">
-                      <div className="flex items-center gap-1">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} className={`h-3 w-3 ${i < review.rating ? 'fill-primary text-primary' : 'text-muted'}`} />
-                        ))}
-                      </div>
-                      <span className="text-sm font-medium">{review.userName}</span>
-                      {review.isVerified && (
-                        <span className="text-xs text-success">Verified Purchase</span>
-                      )}
-                    </div>
-                    <p className="text-muted-foreground">{review.comment}</p>
-                    <p className="text-xs text-muted-foreground mt-2">{new Date(review.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                  </div>
-                ))}
+              <div className="space-y-6">
+                <div className="pb-6 border-b">
+                  <ProductReviewDialog
+                    productId={parseInt(id!)}
+                    productName={currentProduct?.name || ''}
+                    canReview={canReview}
+                    onReviewSubmitted={handleReviewSubmitted}
+                  />
+                </div>
+                <ProductReviews key={reviewsKey} productId={parseInt(id!)} />
               </div>
             </TabsContent>
             <TabsContent value="shipping" className="py-8">

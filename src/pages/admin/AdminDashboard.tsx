@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, ShoppingCart, Users, TrendingUp, FolderTree, LogOut, RefreshCw } from 'lucide-react';
+import { Package, ShoppingCart, Users, TrendingUp, FolderTree, LogOut, RefreshCw, Tag, UserCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import apiClient from '@/lib/api';
@@ -138,6 +138,14 @@ export default function AdminDashboard() {
             <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/admin/categories')}>
               <FolderTree className="mr-2 h-4 w-4" />
               Manage Categories
+            </Button>
+            <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/admin/promos')}>
+              <Tag className="mr-2 h-4 w-4" />
+              Manage Promo Codes
+            </Button>
+            <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/admin/customers')}>
+              <UserCircle className="mr-2 h-4 w-4" />
+              Manage Customers
             </Button>
             <Button className="w-full justify-start" variant="destructive" onClick={() => {
               logout();

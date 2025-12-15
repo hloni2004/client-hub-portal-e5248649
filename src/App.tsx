@@ -22,6 +22,8 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminCategories from "./pages/admin/AdminCategories";
+import AdminCustomers from "./pages/admin/AdminCustomers";
+import AdminPromoCodes from "./pages/admin/AdminPromoCodes";
 import AddProduct from "./pages/admin/AddProduct";
 import EditProduct from "./pages/admin/EditProduct";
 
@@ -60,6 +62,8 @@ const App = () => (
           <Route path="/admin/products/add" element={<ProtectedRoute requiredRole="ADMIN"><AddProduct /></ProtectedRoute>} />
           <Route path="/admin/products/edit/:id" element={<ProtectedRoute requiredRole="ADMIN"><EditProduct /></ProtectedRoute>} />
           <Route path="/admin/categories" element={<ProtectedRoute requiredRole="ADMIN"><AdminCategories /></ProtectedRoute>} />
+          <Route path="/admin/customers" element={<ProtectedRoute requiredRole="ADMIN"><AdminCustomers /></ProtectedRoute>} />
+          <Route path="/admin/promos" element={<ProtectedRoute requiredRole="ADMIN"><AdminPromoCodes /></ProtectedRoute>} />
 
           {/* Fallback Routes */}
           <Route path="*" element={<NotFound />} />

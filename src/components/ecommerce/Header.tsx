@@ -32,9 +32,24 @@ export function Header() {
   const { user, logout } = useAuthStore();
   const [searchOpen, setSearchOpen] = useState(false);
 
+  // Hardcoded categories as fallback
+  const hardcodedCategories = [
+    { id: 1, name: "Men's Clothing", description: "Fashion for men" },
+    { id: 2, name: "Women's Clothing", description: "Fashion for women" },
+    { id: 3, name: "Accessories", description: "Bags, watches, jewelry" },
+    { id: 4, name: "Footwear", description: "Shoes and boots" },
+  ];
+
+  const displayCategories = categories.length > 0 ? categories : hardcodedCategories;
+
   useEffect(() => {
     fetchCategories();
+    console.log('Categories in Header:', categories);
   }, [fetchCategories]);
+
+  useEffect(() => {
+    console.log('Categories updated:', categories);
+  }, [categories]);
 
   const handleSignOut = () => {
     logout();
@@ -44,45 +59,46 @@ export function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
-      <div className="container-luxury flex items-center justify-between h-20">
-        {/* Mobile Menu */}
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden">
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-80">
-            <nav className="flex flex-col gap-6 mt-12">
-              <Link to="/shop" className="font-display text-2xl">Shop All</Link>
-              {categories.map(cat => (
-                <Link key={cat.id} to={`/shop?category=${cat.id}`} className="text-lg text-muted-foreground hover:text-foreground transition-colors">
-                  {cat.name}
-                </Link>
-              ))}
-            </nav>
-          </SheetContent>
-        </Sheet>
+      <div className="container-luxury relative flex items-center h-20">
+        {/* Left: Mobile Menu + Desktop Nav */}
+        <div className="flex items-center gap-4 flex-1 max-w-[40%]">
+          {/* Mobile Menu */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-80">
+              <nav className="flex flex-col gap-6 mt-12">
+                {displayCategories.map(cat => (
+                  <Link key={cat.id} to={`/shop?category=${cat.id}`} className="text-lg text-muted-foreground hover:text-foreground transition-colors">
+                    {cat.name}
+                  </Link>
+                ))}
+              </nav>
+            </SheetContent>
+          </Sheet>
 
-        {/* Logo */}
-        <Link to="/" className="font-display text-xl md:text-2xl tracking-[0.2em]">
-          MAISON LUXE
-        </Link>
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center gap-4">
+            {displayCategories.slice(0, 4).map(cat => (
+              <Link key={cat.id} to={`/shop?category=${cat.id}`} className="text-xs tracking-wider uppercase link-underline whitespace-nowrap">
+                {cat.name}
+              </Link>
+            ))}
+          </nav>
+        </div>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
-          <Link to="/shop" className="text-sm tracking-wider uppercase link-underline">
-            Shop
+        {/* Center: Logo */}
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <Link to="/" className="font-display text-xl md:text-2xl tracking-[0.2em]">
+            MAISON LUXE
           </Link>
-          {categories.slice(0, 4).map(cat => (
-            <Link key={cat.id} to={`/shop?category=${cat.id}`} className="text-sm tracking-wider uppercase link-underline">
-              {cat.name}
-            </Link>
-          ))}
-        </nav>
+        </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-4">
+        {/* Right: Actions */}
+        <div className="flex items-center gap-4 flex-1 justify-end max-w-[40%]">
           {/* Desktop Search */}
           <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
             <DialogTrigger asChild>
