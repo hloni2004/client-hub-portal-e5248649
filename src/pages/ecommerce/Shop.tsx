@@ -303,7 +303,13 @@ export default function Shop() {
                         )}
                         <div className="absolute bottom-3 left-3 right-3 text-reveal">
                           <Button
-                            onClick={(e) => { e.preventDefault(); addItem(product, 1); }}
+                            onClick={async (e) => { 
+                              e.preventDefault(); 
+                              const result = await addItem(product, 1);
+                              if (!result.success && result.message) {
+                                console.error(result.message);
+                              }
+                            }}
                             size="sm"
                             className="w-full bg-foreground text-background hover:bg-primary text-[10px] tracking-[0.15em] uppercase"
                           >
@@ -373,7 +379,12 @@ export default function Shop() {
                         </div>
                         <Button
                           size="sm"
-                          onClick={() => addItem(product, 1)}
+                          onClick={async () => {
+                            const result = await addItem(product, 1);
+                            if (!result.success && result.message) {
+                              console.error(result.message);
+                            }
+                          }}
                           className="text-[10px] tracking-[0.15em] uppercase"
                         >
                           Add to Bag

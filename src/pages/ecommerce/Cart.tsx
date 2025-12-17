@@ -46,9 +46,16 @@ export default function Cart() {
                   <div key={item.id} className="flex gap-6 pb-6 border-b border-border">
                     <Link to={`/product/${item.productId}`} className="w-32 aspect-[3/4] flex-shrink-0 overflow-hidden bg-muted">
                       <img 
-                        src={item.product.primaryImage?.imageData || item.product.images?.[0] || '/images/placeholder.png'} 
+                        src={
+                          item.product.productImages?.[0]?.imageId 
+                            ? `http://localhost:8080/api/products/image/${item.product.productImages[0].imageId}`
+                            : item.product.images?.[0] || 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800'
+                        } 
                         alt={item.product.name} 
-                        className="w-full h-full object-cover" 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800';
+                        }}
                       />
                     </Link>
                     <div className="flex-1">

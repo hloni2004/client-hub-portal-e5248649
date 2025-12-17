@@ -141,11 +141,10 @@ const mockProducts: Product[] = [
 ];
 
 const mockCategories: Category[] = [
-  { id: 1, name: 'Dresses', description: 'Elegant dresses for every occasion', isActive: true, productCount: 24 },
-  { id: 2, name: 'Tops', description: 'Stylish tops and blouses', isActive: true, productCount: 18 },
-  { id: 3, name: 'Bottoms', description: 'Pants, skirts, and shorts', isActive: true, productCount: 32 },
-  { id: 4, name: 'Outerwear', description: 'Coats and jackets', isActive: true, productCount: 15 },
-  { id: 5, name: 'Accessories', description: 'Complete your look', isActive: true, productCount: 21 },
+  { id: 1, name: 'Men', description: 'Men\'s fashion and accessories', isActive: true, productCount: 24 },
+  { id: 2, name: 'Women', description: 'Women\'s fashion and accessories', isActive: true, productCount: 18 },
+  { id: 3, name: 'Accessories', description: 'Fashion accessories for all', isActive: true, productCount: 32 },
+  { id: 4, name: 'Footwear', description: 'Shoes and boots', isActive: true, productCount: 15 },
 ];
 
 export const useProductStore = create<ProductState>((set, get) => ({
@@ -261,29 +260,41 @@ export const useProductStore = create<ProductState>((set, get) => ({
       const categoriesData = response.data?.data || response.data;
       
       console.log('Categories API response:', categoriesData);
+      console.log('Is array?', Array.isArray(categoriesData));
       
       // Map backend categories to frontend Category interface
-      // Filter active categories and remove duplicates
+      // Include ALL categories, not just active ones
       const mappedCategories = Array.isArray(categoriesData) 
         ? categoriesData
-            .filter((cat: any) => cat.isActive === true)
-            .map((cat: any) => ({
-              id: cat.categoryId,
-              name: cat.name,
-              description: cat.description,
-              image: cat.imageUrl,
-              isActive: cat.isActive,
-            }))
+            .map((cat: any) => {
+              console.log(`Category ${cat.name}: isActive = ${cat.isActive}, imageUrl = ${cat.imageUrl}`);
+              // Handle both blob images and URL strings
+              let imageUrl = cat.imageUrl;
+              
+              // If imageUrl looks like base64 data, use it directly
+              if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('data:')) {
+                // Assume it's base64 blob data
+                imageUrl = `data:image/jpeg;base64,${imageUrl}`;
+              }
+              
+              return {
+                id: cat.categoryId,
+                name: cat.name,
+                description: cat.description,
+                image: imageUrl,
+                isActive: cat.isActive,
+              };
+            })
             .filter((category, index, self) => 
               index === self.findIndex((c) => c.id === category.id)
             )
         : [];
       
       console.log('Mapped categories:', mappedCategories);
+      console.log('Number of categories:', mappedCategories.length);
       
-      // Use mock categories if API returns empty or use fetched categories
+      // Use database categories if available, otherwise use mock
       const finalCategories = mappedCategories.length > 0 ? mappedCategories : mockCategories;
-      
       set({ categories: finalCategories, categoriesLoading: false });
     } catch (error) {
       console.error('Failed to fetch categories, using mock data:', error);

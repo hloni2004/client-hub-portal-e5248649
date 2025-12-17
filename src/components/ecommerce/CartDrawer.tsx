@@ -39,9 +39,16 @@ export function CartDrawer() {
                 <div key={item.id} className="flex gap-4">
                   <Link to={`/product/${item.productId}`} onClick={closeCart} className="w-24 h-32 flex-shrink-0 overflow-hidden bg-muted rounded">
                     <img 
-                      src={item.product.primaryImage?.imageData || item.product.images?.[0] || '/images/placeholder.png'} 
+                      src={
+                        item.product.productImages?.[0]?.imageId 
+                          ? `http://localhost:8080/api/products/image/${item.product.productImages[0].imageId}`
+                          : item.product.images?.[0] || 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800'
+                      } 
                       alt={item.product.name} 
-                      className="w-full h-full object-cover" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800';
+                      }}
                     />
                   </Link>
                   <div className="flex-1 min-w-0">
@@ -87,11 +94,6 @@ export function CartDrawer() {
               <p className="text-xs text-muted-foreground">Shipping calculated at checkout</p>
               
               <div className="space-y-3">
-                <Link to="/cart" onClick={closeCart}>
-                  <Button variant="outline" className="w-full h-12 text-xs tracking-[0.15em] uppercase">
-                    View Bag
-                  </Button>
-                </Link>
                 <Link to="/checkout" onClick={closeCart}>
                   <Button className="w-full h-12 text-xs tracking-[0.15em] uppercase">
                     Checkout

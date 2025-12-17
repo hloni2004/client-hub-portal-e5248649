@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { ForgotPasswordDialog } from '@/components/ecommerce/ForgotPasswordDialog';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email format'),
@@ -21,6 +22,7 @@ export default function Login() {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
   const [isLoading, setIsLoading] = useState(false);
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
 
   const {
     register,
@@ -74,7 +76,16 @@ export default function Login() {
               {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <button
+                  type="button"
+                  onClick={() => setForgotPasswordOpen(true)}
+                  className="text-sm text-primary hover:underline font-medium"
+                >
+                  Forgot password?
+                </button>
+              </div>
               <Input
                 id="password"
                 type="password"
@@ -98,6 +109,11 @@ export default function Login() {
           </CardFooter>
         </form>
       </Card>
+
+      <ForgotPasswordDialog 
+        open={forgotPasswordOpen} 
+        onOpenChange={setForgotPasswordOpen} 
+      />
     </div>
   );
 }

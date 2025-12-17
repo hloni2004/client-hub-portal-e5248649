@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 // Auth pages
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+import ResetPassword from "./pages/auth/ResetPassword";
 
 // E-commerce pages
 import Home from "./pages/ecommerce/Home";
@@ -44,6 +45,7 @@ const App = () => (
           {/* Auth Routes */}
           <Route path="/auth/login" element={<Login />} />
           <Route path="/auth/register" element={<Register />} />
+          <Route path="/auth/reset-password" element={<ResetPassword />} />
 
           {/* Protected E-commerce Routes */}
           <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />

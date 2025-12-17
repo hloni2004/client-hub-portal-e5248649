@@ -61,6 +61,9 @@ export default function AdminCategories() {
     imageUrl: '',
     isActive: true,
   });
+  
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
 
   useEffect(() => {
     fetchCategories();
@@ -94,6 +97,8 @@ export default function AdminCategories() {
         imageUrl: category.imageUrl || '',
         isActive: category.isActive,
       });
+      setImagePreview(category.imageUrl || '');
+      setImageFile(null);
     } else {
       setSelectedCategory(null);
       setFormData({
@@ -102,6 +107,8 @@ export default function AdminCategories() {
         imageUrl: '',
         isActive: true,
       });
+      setImagePreview('');
+      setImageFile(null);
     }
     setIsDialogOpen(true);
   };
@@ -115,6 +122,8 @@ export default function AdminCategories() {
       imageUrl: '',
       isActive: true,
     });
+    setImageFile(null);
+    setImagePreview('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -131,13 +140,55 @@ export default function AdminCategories() {
 
     try {
       setSubmitting(true);
+      
+      // Convert image to base64 if file is selected
+      let imageBase64 = formData.imageUrl || '';
+      if (imageFile) {
+        try {
+          const reader = new FileReader();
+          imageBase64 = await new Promise<string>((resolve, reject) => {
+            reader.onloadend = () => {
+              const base64String = reader.result as string;
+              // Remove data:image/xxx;base64, prefix to get just the base64 data
+              const base64Data = base64String.split(',')[1];
+              resolve(base64Data);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(imageFile);
+          });
+          console.log('Image converted to base64, length:', imageBase64.length);
+        } catch (error) {
+          console.error('Error converting image:', error);
+          toast({
+            title: 'Error',
+            description: 'Failed to process image file',
+            variant: 'destructive',
+          });
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      const categoryData = {
+        name: formData.name,
+        description: formData.description || '',
+        imageUrl: imageBase64,
+        isActive: formData.isActive,
+      };
+
+      console.log('Submitting category data:', { 
+        ...categoryData, 
+        imageUrl: categoryData.imageUrl ? `${categoryData.imageUrl.substring(0, 50)}...` : 'none' 
+      });
 
       if (selectedCategory) {
         // Update existing category
         const response = await apiClient.put('/categories/update', {
           categoryId: selectedCategory.categoryId,
-          ...formData,
+          ...categoryData,
         });
+
+        console.log('Update response:', response.data);
 
         if (response.data.success) {
           toast({
@@ -154,7 +205,9 @@ export default function AdminCategories() {
         }
       } else {
         // Create new category
-        const response = await apiClient.post('/categories/create', formData);
+        const response = await apiClient.post('/categories/create', categoryData);
+
+        console.log('Create response:', response.data);
 
         if (response.status === 201 || response.data) {
           toast({
@@ -171,9 +224,10 @@ export default function AdminCategories() {
       }
     } catch (error: any) {
       console.error('Error saving category:', error);
+      console.error('Error response:', error.response?.data);
       toast({
         title: 'Error',
-        description: error.response?.data?.message || 'Failed to save category',
+        description: error.response?.data?.message || error.message || 'Failed to save category',
         variant: 'destructive',
       });
     } finally {
@@ -367,16 +421,32 @@ export default function AdminCategories() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="imageUrl">Image URL</Label>
+                <Label htmlFor="categoryImage">Category Image</Label>
                 <Input
-                  id="imageUrl"
-                  value={formData.imageUrl}
-                  onChange={(e) =>
-                    setFormData({ ...formData, imageUrl: e.target.value })
-                  }
-                  placeholder="https://example.com/image.jpg"
-                  type="url"
+                  id="categoryImage"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setImageFile(file);
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setImagePreview(reader.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
                 />
+                {imagePreview && (
+                  <div className="mt-2">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-32 h-32 object-cover rounded border"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-between">

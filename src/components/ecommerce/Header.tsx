@@ -32,24 +32,10 @@ export function Header() {
   const { user, logout } = useAuthStore();
   const [searchOpen, setSearchOpen] = useState(false);
 
-  // Hardcoded categories as fallback
-  const hardcodedCategories = [
-    { id: 1, name: "Men's Clothing", description: "Fashion for men" },
-    { id: 2, name: "Women's Clothing", description: "Fashion for women" },
-    { id: 3, name: "Accessories", description: "Bags, watches, jewelry" },
-    { id: 4, name: "Footwear", description: "Shoes and boots" },
-  ];
-
-  const displayCategories = categories.length > 0 ? categories : hardcodedCategories;
-
   useEffect(() => {
     fetchCategories();
-    console.log('Categories in Header:', categories);
-  }, [fetchCategories]);
-
-  useEffect(() => {
-    console.log('Categories updated:', categories);
-  }, [categories]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSignOut = () => {
     logout();
@@ -59,19 +45,19 @@ export function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
-      <div className="container-luxury relative flex items-center h-20">
-        {/* Left: Mobile Menu + Desktop Nav */}
-        <div className="flex items-center gap-4 flex-1 max-w-[40%]">
+      <div className="container-luxury relative h-20">
+        {/* Left: Desktop Nav + Mobile Menu */}
+        <div className="absolute left-0 top-0 bottom-0 flex items-center gap-6">
           {/* Mobile Menu */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
+              <Button variant="ghost" size="icon" className="lg:hidden">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-80">
               <nav className="flex flex-col gap-6 mt-12">
-                {displayCategories.map(cat => (
+                {categories.map(cat => (
                   <Link key={cat.id} to={`/shop?category=${cat.id}`} className="text-lg text-muted-foreground hover:text-foreground transition-colors">
                     {cat.name}
                   </Link>
@@ -81,8 +67,8 @@ export function Header() {
           </Sheet>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-4">
-            {displayCategories.slice(0, 4).map(cat => (
+          <nav className="hidden lg:flex items-center gap-8">
+            {categories.slice(0, 4).map(cat => (
               <Link key={cat.id} to={`/shop?category=${cat.id}`} className="text-xs tracking-wider uppercase link-underline whitespace-nowrap">
                 {cat.name}
               </Link>
@@ -91,14 +77,16 @@ export function Header() {
         </div>
 
         {/* Center: Logo */}
-        <div className="absolute left-1/2 -translate-x-1/2">
-          <Link to="/" className="font-display text-xl md:text-2xl tracking-[0.2em]">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <Link to="/" className="font-display text-xl md:text-2xl tracking-[0.2em] whitespace-nowrap">
             MAISON LUXE
           </Link>
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-4 flex-1 justify-end max-w-[40%]">
+        <div className="absolute right-0 top-0 bottom-0 flex items-center gap-4">
+          
+          {/* Actions */}
           {/* Desktop Search */}
           <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
             <DialogTrigger asChild>

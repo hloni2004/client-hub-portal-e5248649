@@ -26,19 +26,51 @@ export const useCartStore = create<CartState>()(
       isOpen: false,
 
       addItem: async (product: Product, quantity: number, colorId?: number, sizeId?: number) => {
+        // If colorId or sizeId is not provided, fetch product details to get the first available color/size
+        if (!colorId || !sizeId) {
+          try {
+            const apiClient = (await import('@/lib/api')).default;
+            const response = await apiClient.get(`/products/read/${product.id}`);
+            const productData = response.data.data || response.data;
+            
+            // Get first available colour and size
+            if (productData.colours && productData.colours.length > 0) {
+              const firstColour = productData.colours[0];
+              colorId = firstColour.colourId;
+              
+              if (firstColour.sizes && firstColour.sizes.length > 0) {
+                sizeId = firstColour.sizes[0].sizeId;
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching product details:', error);
+          }
+        }
+        
+        // If we still don't have color/size, show error
+        if (!colorId || !sizeId) {
+          return {
+            success: false,
+            message: 'This product requires color and size selection. Please view product details to add to cart.'
+          };
+        }
+        
         // Save to backend first if user is logged in to validate stock
         try {
           const userStr = localStorage.getItem('user');
           if (userStr) {
             const user = JSON.parse(userStr);
             const apiClient = (await import('@/lib/api')).default;
-            const response = await apiClient.post('/carts/add-item', {
+            
+            const payload: any = {
               userId: user.userId,
               productId: product.id,
               colourId: colorId,
               sizeId: sizeId,
               quantity: quantity
-            });
+            };
+            
+            const response = await apiClient.post('/carts/add-item', payload);
             
             // Check if backend returned an error
             if (response.data && !response.data.success) {
@@ -57,6 +89,10 @@ export const useCartStore = create<CartState>()(
               message: error.response.data.message 
             };
           }
+          return {
+            success: false,
+            message: 'Failed to add item to cart. Please try again.'
+          };
         }
 
         // Update local state
