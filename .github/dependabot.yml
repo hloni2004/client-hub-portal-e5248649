@@ -1,0 +1,10 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/client-hub-portal-e5248649"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "maven"
+    directory: "/E_Commerce"
+    schedule:
+      interval: "daily"

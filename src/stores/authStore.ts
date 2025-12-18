@@ -26,12 +26,9 @@ export const useAuthStore = create<AuthState>()(
         const response = await apiClient.post('/users/login', data);
         const user: User = response.data;
         
-        // Generate a token for session management
-        const token = btoa(JSON.stringify({ userId: user.userId, email: user.email, roleName: user.roleName }));
-        
-        localStorage.setItem('authToken', token);
+        // Server sets HttpOnly cookies for access/refresh tokens. Keep only user info in local storage.
         localStorage.setItem('user', JSON.stringify(user));
-        set({ user, token, isAuthenticated: true });
+        set({ user, token: null, isAuthenticated: true });
       },
 
       register: async (data: RegisterDto) => {
@@ -46,18 +43,19 @@ export const useAuthStore = create<AuthState>()(
         set({ user, token, isAuthenticated: true });
       },
 
-      logout: () => {
-        // Clear all authentication data
+      logout: async () => {
+        try {
+          await apiClient.post('/users/logout');
+        } catch (e) {
+          // ignore errors during logout
+        }
+
+        // Clear local storage and state
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
         localStorage.removeItem('auth-storage');
-        
-        // Clear cart data
         localStorage.removeItem('luxury-cart-storage');
-        
-        // Clear any other app-specific data
         localStorage.removeItem('cart-storage');
-        
         set({ user: null, token: null, isAuthenticated: false });
       },
 

@@ -38,19 +38,25 @@ export function CartDrawer() {
               {items.map(item => (
                 <div key={item.id} className="flex gap-4">
                   <Link to={`/product/${item.productId}`} onClick={closeCart} className="w-24 h-32 flex-shrink-0 overflow-hidden bg-muted rounded">
-                    <img 
+                    <img
                       src={
-                        item.product.productImages?.[0]?.imageId 
-                          ? `http://localhost:8080/api/products/image/${item.product.productImages[0].imageId}`
-                          : item.product.images?.[0] || 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800'
-                      } 
-                      alt={item.product.name} 
+                        // Prefer Supabase / imageUrl on productImages
+                        item.product.productImages?.[0]?.imageUrl
+                          ?? (item.product.productImages?.[0]?.imageId ? `http://localhost:8080/api/products/image/${item.product.productImages[0].imageId}` : undefined)
+                          // fallback to primaryImage base64 if present
+                          ?? (item.product.primaryImage?.imageData ? `data:${(item.product.primaryImage as any)?.contentType ?? 'image/jpeg'};base64,${(item.product.primaryImage as any).imageData}` : undefined)
+                          // legacy array of image urls
+                          ?? item.product.images?.[0]
+                          // final fallback
+                          ?? 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800'
+                      }
+                      alt={item.product.name}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.currentTarget.src = 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800';
                       }}
                     />
-                  </Link>
+                  </Link> 
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between gap-2 mb-1">
                       <h4 className="font-display text-sm truncate">

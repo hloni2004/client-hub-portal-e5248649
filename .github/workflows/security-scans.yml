@@ -1,0 +1,54 @@
+name: Security Scans
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  security-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install frontend deps
+        working-directory: ./client-hub-portal-e5248649
+        run: |
+          corepack enable
+          pnpm install
+
+      - name: Run frontend audit
+        working-directory: ./client-hub-portal-e5248649
+        run: pnpm audit --audit-level=moderate || true
+
+      - name: Run frontend tests
+        working-directory: ./client-hub-portal-e5248649
+        run: pnpm test --silent || true
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Run backend tests
+        working-directory: ./E_Commerce
+        run: mvn -B -DskipTests=false test
+
+      - name: Run mvn dependency check (OWASP)
+        working-directory: ./E_Commerce
+        run: mvn org.owasp:dependency-check-maven:check -Dformat=ALL || true
+
+      - name: Optional: Run Snyk
+        if: ${{ secrets.SNYK_TOKEN }}
+        uses: snyk/actions/node@master
+        with:
+          command: test
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}

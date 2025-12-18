@@ -221,7 +221,7 @@ export interface Review {
   rating: number;
   title?: string;
   comment: string;
-  images?: string[];
+  images?: Array<string | { supabaseUrl?: string; imageUrl?: string; imageData?: string; contentType?: string }>; // support new Supabase URL or legacy base64/URL
   isVerified: boolean;
   createdAt: string;
 }

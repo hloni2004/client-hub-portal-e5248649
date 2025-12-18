@@ -17,11 +17,13 @@ interface Review {
   verified: boolean;
   helpfulCount: number;
   images?: Array<{
-    imageId: number;
-    imageData: string;
-    contentType: string;
+    imageId?: number;
+    supabaseUrl?: string; // new Supabase public URL
+    imageUrl?: string; // legacy URL
+    imageData?: string; // legacy base64 data
+    contentType?: string;
   }>;
-}
+} 
 
 interface ProductReviewsProps {
   productId: number;
@@ -142,16 +144,21 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
 
                   {review.images && review.images.length > 0 && (
                     <div className="flex gap-2 mt-3">
-                      {review.images.map((image) => (
-                        <img
-                          key={image.imageId}
-                          src={`data:${image.contentType};base64,${image.imageData}`}
-                          alt="Review"
-                          className="h-20 w-20 rounded-lg object-cover border cursor-pointer hover:opacity-80 transition-opacity"
-                        />
-                      ))}
+                      {review.images.map((image) => {
+                        const src = image.supabaseUrl ?? image.imageUrl ?? (image.imageData ? `data:${image.contentType};base64,${image.imageData}` : undefined);
+                        if (!src) return null;
+                        return (
+                          <img
+                            key={(image.imageId ?? src).toString()}
+                            src={src}
+                            alt="Review"
+                            onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800'; }}
+                            className="h-20 w-20 rounded-lg object-cover border cursor-pointer hover:opacity-80 transition-opacity"
+                          />
+                        );
+                      })}
                     </div>
-                  )}
+                  )} 
 
                   {review.helpfulCount > 0 && (
                     <div className="text-xs text-muted-foreground">
