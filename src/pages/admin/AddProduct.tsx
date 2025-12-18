@@ -169,7 +169,7 @@ export default function AddProduct() {
         return;
       }
 
-      // Prepare product data matching backend DTO structure
+      // Step 1: Create product without images
       const productData = {
         name: data.name,
         description: data.description,
@@ -179,7 +179,7 @@ export default function AddProduct() {
         weight: data.weight || 0,
         categoryId: data.categoryId,
         isActive: data.isActive,
-        imageBase64List: images.map(img => img.base64.split(',')[1]), // Remove data:image/...;base64, prefix
+        imageBase64List: [], // Don't send Base64 images anymore
         colours: colours.map(colour => ({
           name: colour.name,
           hexCode: colour.hexCode,
@@ -190,9 +190,30 @@ export default function AddProduct() {
         })),
       };
 
+      console.log('Creating product...');
       const response = await apiClient.post('/products/create', productData);
-      toast.success('Product created successfully with all details!');
-      console.log('Created product:', response.data);
+      const createdProduct = response.data.data || response.data;
+      const productId = createdProduct.productId;
+
+      console.log('Product created with ID:', productId);
+
+      // Step 2: Upload images to Supabase Storage
+      if (images.length > 0) {
+        const formData = new FormData();
+        images.forEach(img => {
+          formData.append('files', img.file);
+        });
+
+        console.log('Uploading', images.length, 'images to Supabase...');
+        await apiClient.post(`/product-images/upload/${productId}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        console.log('Images uploaded successfully');
+      }
+
+      toast.success('Product created successfully with images!');
       
       // Navigate back to products page after 1 second
       setTimeout(() => {

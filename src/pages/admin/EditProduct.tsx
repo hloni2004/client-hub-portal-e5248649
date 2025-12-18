@@ -204,12 +204,10 @@ export default function EditProduct() {
   const onSubmit = async (data: ProductFormData) => {
     setLoading(true);
     try {
-      // Get only new images (ones with base64)
-      const newImageBase64List = images
-        .filter(img => img.base64)
-        .map(img => img.base64!.split(',')[1]);
+      // Get only new images (ones with base64 and file)
+      const newImages = images.filter(img => img.base64 && img.file);
 
-      // Prepare product data
+      // Prepare product data without Base64 images
       const productData = {
         productId: parseInt(id!),
         name: data.name,
@@ -220,7 +218,7 @@ export default function EditProduct() {
         weight: data.weight || 0,
         categoryId: data.categoryId,
         isActive: data.isActive,
-        imageBase64List: newImageBase64List,
+        imageBase64List: [], // Don't send Base64 images
         existingImageIds: images.filter(img => img.imageId).map(img => img.imageId),
         colours: colours.map(colour => ({
           colourId: colour.colourId,
@@ -234,7 +232,25 @@ export default function EditProduct() {
         })),
       };
 
+      console.log('Updating product...');
       await apiClient.put('/products/update', productData);
+
+      // Upload new images to Supabase if any
+      if (newImages.length > 0) {
+        const formData = new FormData();
+        newImages.forEach(img => {
+          formData.append('files', img.file);
+        });
+
+        console.log('Uploading', newImages.length, 'new images to Supabase...');
+        await apiClient.post(`/product-images/upload/${id}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        console.log('Images uploaded successfully');
+      }
+
       toast.success('Product updated successfully!');
       navigate('/admin/products');
     } catch (error: any) {
