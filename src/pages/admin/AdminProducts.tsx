@@ -41,6 +41,8 @@ interface Product {
   images?: Array<{
     imageId: number;
     isPrimary: boolean;
+    supabaseUrl?: string;
+    imageUrl?: string;
   }>;
 }
 
@@ -165,7 +167,13 @@ export default function AdminProducts() {
                         <TableCell>
                           {product.images && product.images.length > 0 ? (
                             <img
-                              src={`http://localhost:8080/api/products/image/${product.images.find(img => img.isPrimary)?.imageId || product.images[0].imageId}`}
+                              src={
+                                product.images.find(img => img.isPrimary && (img.supabaseUrl || img.imageUrl))?.supabaseUrl ||
+                                product.images.find(img => img.isPrimary && (img.supabaseUrl || img.imageUrl))?.imageUrl ||
+                                product.images.find(img => img.supabaseUrl || img.imageUrl)?.supabaseUrl ||
+                                product.images.find(img => img.supabaseUrl || img.imageUrl)?.imageUrl ||
+                                'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect fill="%23e5e7eb" width="64" height="64"/></svg>'
+                              }
                               alt={product.name}
                               className="w-16 h-16 object-cover rounded"
                               onError={(e) => {

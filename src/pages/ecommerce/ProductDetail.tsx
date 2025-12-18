@@ -136,8 +136,8 @@ export default function ProductDetail() {
   // Helper to get product image URLs
   const getProductImageUrls = () => {
     if (!currentProduct) return [];
-    
-    // Check if product has blob-based images
+
+    // Use supabaseUrl or imageUrl from productImages if available
     if (currentProduct.productImages && currentProduct.productImages.length > 0) {
       // Sort by display order and primary first
       const sortedImages = [...currentProduct.productImages].sort((a, b) => {
@@ -145,17 +145,14 @@ export default function ProductDetail() {
         if (!a.isPrimary && b.isPrimary) return 1;
         return a.displayOrder - b.displayOrder;
       });
-      
-      return sortedImages.map(img => 
-        `http://localhost:8080/api/products/image/${img.imageId}`
-      );
+      return sortedImages.map(img => img.supabaseUrl || img.imageUrl || 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800');
     }
-    
+
     // Fallback to legacy images array
     if (currentProduct.images && currentProduct.images.length > 0) {
       return currentProduct.images;
     }
-    
+
     // Default fallback image
     return ['https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800'];
   };

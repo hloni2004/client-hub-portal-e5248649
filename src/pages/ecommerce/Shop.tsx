@@ -29,8 +29,8 @@ export default function Shop() {
   const getProductImageUrl = (product: any) => {
     // Check if product has blob-based images
     if (product.productImages && product.productImages.length > 0) {
-      const primaryImage = product.productImages.find((img: any) => img.isPrimary) || product.productImages[0];
-      return `http://localhost:8080/api/products/image/${primaryImage.imageId}`;
+      const primaryImage = product.productImages.find((img: any) => img.isPrimary && (img.supabaseUrl || img.imageUrl)) || product.productImages.find((img: any) => img.supabaseUrl || img.imageUrl) || product.productImages[0];
+      return primaryImage.supabaseUrl || primaryImage.imageUrl || '';
     }
     // Fallback to legacy images array
     if (product.images && product.images.length > 0) {
