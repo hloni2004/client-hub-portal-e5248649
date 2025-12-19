@@ -206,6 +206,7 @@ export default function Register() {
                 id="password"
                 type="password"
                 placeholder="••••••••"
+                autoComplete="new-password"
                 {...registerField('password')}
                 disabled={isLoading}
               />
@@ -217,6 +218,7 @@ export default function Register() {
                 id="confirmPassword"
                 type="password"
                 placeholder="••••••••"
+                autoComplete="new-password"
                 {...registerField('confirmPassword')}
                 disabled={isLoading}
               />

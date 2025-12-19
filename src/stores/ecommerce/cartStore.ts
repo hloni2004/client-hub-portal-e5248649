@@ -15,6 +15,7 @@ interface CartState {
   toggleCart: () => void;
   openCart: () => void;
   closeCart: () => void;
+  syncLocalToServer: () => Promise<{ success: boolean; message?: string }>;
 }
 
 export const useCartStore = create<CartState>()(
@@ -57,11 +58,13 @@ export const useCartStore = create<CartState>()(
         
         // Save to backend first if user is logged in to validate stock
         try {
-          const userStr = localStorage.getItem('user');
-          if (userStr) {
-            const user = JSON.parse(userStr);
+          // Use auth store to get the current logged-in user (zustand persisted store)
+          const { useAuthStore } = await import('@/stores/authStore');
+          const user = useAuthStore.getState().user;
+
+          if (user) {
             const apiClient = (await import('@/lib/api')).default;
-            
+
             const payload: any = {
               userId: user.userId,
               productId: product.id,
@@ -69,9 +72,9 @@ export const useCartStore = create<CartState>()(
               sizeId: sizeId,
               quantity: quantity
             };
-            
+
             const response = await apiClient.post('/carts/add-item', payload);
-            
+
             // Check if backend returned an error
             if (response.data && !response.data.success) {
               return { 
@@ -160,6 +163,32 @@ export const useCartStore = create<CartState>()(
       toggleCart: () => set({ isOpen: !get().isOpen }),
       openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),
+
+      // Sync local cart items to backend for logged-in users
+      syncLocalToServer: async () => {
+        const user = (await import('@/stores/authStore')).useAuthStore.getState().user;
+        if (!user) return { success: false, message: 'No user logged in' };
+
+        const apiClient = (await import('@/lib/api')).default;
+        const items = get().items;
+
+        for (const item of items) {
+          try {
+            await apiClient.post('/carts/add-item', {
+              userId: user.userId,
+              productId: item.productId,
+              colourId: item.colorId,
+              sizeId: item.sizeId,
+              quantity: item.quantity,
+            });
+          } catch (e) {
+            console.error('Failed to sync cart item', item, e);
+            return { success: false, message: 'Failed to sync cart' };
+          }
+        }
+
+        return { success: true };
+      },
     }),
     {
       name: 'luxury-cart-storage',

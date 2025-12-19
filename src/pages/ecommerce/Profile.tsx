@@ -270,8 +270,8 @@ export default function EcommerceProfile() {
           userId: user?.userId,
           productId: item.product.productId,
           colourId: item.colour.colourId,
-          sizeId: item.colourSize.colourSizeId,
-          quantity: item.quantity
+          sizeId: item.colourSize?.sizeId || item.colourSize?.colourSizeId || item.sizeId,
+          quantity: item.quantity,
         });
       }
 

@@ -145,16 +145,19 @@ export default function ProductDetail() {
         if (!a.isPrimary && b.isPrimary) return 1;
         return a.displayOrder - b.displayOrder;
       });
-      return sortedImages.map(img => img.supabaseUrl || img.imageUrl || 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800');
+      // Only return actual images, no fallback
+      return sortedImages
+        .map(img => img.supabaseUrl || img.imageUrl)
+        .filter(Boolean);
     }
 
     // Fallback to legacy images array
     if (currentProduct.images && currentProduct.images.length > 0) {
-      return currentProduct.images;
+      return currentProduct.images.filter(Boolean);
     }
 
-    // Default fallback image
-    return ['https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800'];
+    // No fallback image
+    return [];
   };
 
   if (loading || !currentProduct) {
@@ -205,9 +208,6 @@ export default function ProductDetail() {
                   src={images[currentImageIndex]}
                   alt={currentProduct.name}
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800';
-                  }}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-muted-foreground">
@@ -245,9 +245,6 @@ export default function ProductDetail() {
                       src={img} 
                       alt={`${currentProduct.name} - View ${index + 1}`} 
                       className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800';
-                      }}
                     />
                   </button>
                 ))}

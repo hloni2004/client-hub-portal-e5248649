@@ -103,6 +103,16 @@ export default function Checkout() {
   const loadCheckoutData = async () => {
     setLoading(true);
     try {
+      // Sync local cart to server (if any items exist locally and user just logged in)
+      try {
+        const syncRes = await useCartStore.getState().syncLocalToServer();
+        if (!syncRes.success) {
+          console.warn('Sync local cart to server returned:', syncRes);
+        }
+      } catch (e) {
+        console.error('Error syncing local cart before checkout', e);
+      }
+
       // Load shipping methods
       const methodsRes = await apiClient.get('/checkout/shipping-methods');
       console.log('Shipping methods response:', methodsRes.data);

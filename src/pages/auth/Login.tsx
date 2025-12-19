@@ -90,6 +90,7 @@ export default function Login() {
                 id="password"
                 type="password"
                 placeholder="••••••••"
+                autoComplete="current-password"
                 {...register('password')}
                 disabled={isLoading}
               />

@@ -25,22 +25,22 @@ export const useAuthStore = create<AuthState>()(
       login: async (data: LoginDto) => {
         const response = await apiClient.post('/users/login', data);
         const user: User = response.data;
-        
-        // Server sets HttpOnly cookies for access/refresh tokens. Keep only user info in local storage.
-        localStorage.setItem('user', JSON.stringify(user));
+        // Only store non-sensitive user info in memory (not localStorage)
         set({ user, token: null, isAuthenticated: true });
+
+        // After login, sync any locally-stored cart items to the server
+        try {
+          const { useCartStore } = await import('./ecommerce/cartStore');
+          await useCartStore.getState().syncLocalToServer();
+        } catch (e) {
+          console.error('Error syncing local cart after login', e);
+        }
       },
 
       register: async (data: RegisterDto) => {
         const response = await apiClient.post('/users/register', data);
         const user: User = response.data;
-        
-        // Generate a token for session management
-        const token = btoa(JSON.stringify({ userId: user.userId, email: user.email, roleName: user.roleName }));
-        
-        localStorage.setItem('authToken', token);
-        localStorage.setItem('user', JSON.stringify(user));
-        set({ user, token, isAuthenticated: true });
+        set({ user, token: null, isAuthenticated: true });
       },
 
       logout: async () => {
@@ -49,18 +49,11 @@ export const useAuthStore = create<AuthState>()(
         } catch (e) {
           // ignore errors during logout
         }
-
-        // Clear local storage and state
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('user');
-        localStorage.removeItem('auth-storage');
-        localStorage.removeItem('luxury-cart-storage');
-        localStorage.removeItem('cart-storage');
+        // Clear only in-memory state (no sensitive info in localStorage)
         set({ user: null, token: null, isAuthenticated: false });
       },
 
       setUser: (user: User) => {
-        localStorage.setItem('user', JSON.stringify(user));
         set({ user });
       },
 

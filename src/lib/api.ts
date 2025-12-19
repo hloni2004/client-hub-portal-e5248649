@@ -13,19 +13,8 @@ export const apiClient = axios.create({
   xsrfHeaderName: 'X-XSRF-TOKEN',
 });
 
-// Request interceptor - add auth token
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+
+// No Authorization header needed; rely on HttpOnly cookies for authentication
 
 // Response interceptor - handle errors and token refresh
 let isRefreshing = false;
@@ -47,34 +36,13 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+
     if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise(function (resolve, reject) {
-          failedQueue.push({ resolve, reject });
-        })
-          .then(() => apiClient(originalRequest))
-          .catch((err) => Promise.reject(err));
+      // Optionally, redirect to login on 401
+      if (!window.location.pathname.includes('/auth/login')) {
+        window.location.href = '/auth/login';
       }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      try {
-        await apiClient.post('/users/refresh');
-        processQueue(null, true);
-        return apiClient(originalRequest);
-      } catch (err) {
-        processQueue(err, null);
-        // Clear client-side state and redirect to login
-        localStorage.removeItem('user');
-        localStorage.removeItem('auth-storage');
-        if (!window.location.pathname.includes('/auth/login')) {
-          window.location.href = '/auth/login';
-        }
-        return Promise.reject(err);
-      } finally {
-        isRefreshing = false;
-      }
+      return Promise.reject(error);
     }
 
     return Promise.reject(error);
