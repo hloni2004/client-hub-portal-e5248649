@@ -111,7 +111,7 @@ export default function EditProduct() {
       if (product.images && product.images.length > 0) {
         const existingImages = product.images.map((img: any) => ({
           imageId: img.imageId,
-          preview: img.supabaseUrl || img.imageUrl || `http://localhost:8080/api/products/image/${img.imageId}`,
+          preview: img.supabaseUrl || img.imageUrl || `https://e-commerce-7lqm.onrender.com/api/products/image/${img.imageId}`,
           isPrimary: img.isPrimary,
         }));
         setImages(existingImages);

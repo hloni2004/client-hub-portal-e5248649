@@ -20,7 +20,7 @@ export function SearchWithAutocomplete() {
   const getProductImageUrl = (product: Product) => {
     if (product.productImages && product.productImages.length > 0) {
       const primaryImage = product.productImages.find((img: any) => img.isPrimary) || product.productImages[0];
-      return `http://localhost:8080/api/products/image/${primaryImage.imageId}`;
+      return `https://e-commerce-7lqm.onrender.com/api/products/image/${primaryImage.imageId}`;
     }
     if (product.images && product.images.length > 0) {
       return product.images[0];

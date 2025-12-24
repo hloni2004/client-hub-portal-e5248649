@@ -75,7 +75,7 @@ export default function Approvals() {
   };
 
   const handleDownload = (filePath: string, fileName: string) => {
-    window.open(`http://localhost:8080${filePath}`, '_blank');
+    window.open(`https://e-commerce-7lqm.onrender.com${filePath}`, '_blank');
   };
 
   if (user?.role !== UserRole.ADMIN) {

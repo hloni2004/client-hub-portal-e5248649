@@ -48,7 +48,7 @@ export default function Cart() {
                       <img 
                         src={
                           item.product.productImages?.[0]?.imageId 
-                            ? `http://localhost:8080/api/products/image/${item.product.productImages[0].imageId}`
+                            ? `https://e-commerce-7lqm.onrender.com/api/products/image/${item.product.productImages[0].imageId}`
                             : item.product.images?.[0] || 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800'
                         } 
                         alt={item.product.name} 

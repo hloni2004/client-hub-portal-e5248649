@@ -42,7 +42,7 @@ export function CartDrawer() {
                       src={
                         // Prefer Supabase / imageUrl on productImages
                         item.product.productImages?.[0]?.imageUrl
-                          ?? (item.product.productImages?.[0]?.imageId ? `http://localhost:8080/api/products/image/${item.product.productImages[0].imageId}` : undefined)
+                          ?? (item.product.productImages?.[0]?.imageId ? `https://e-commerce-7lqm.onrender.com/api/products/image/${item.product.productImages[0].imageId}` : undefined)
                           // fallback to primaryImage base64 if present
                           ?? (item.product.primaryImage?.imageData ? `data:${(item.product.primaryImage as any)?.contentType ?? 'image/jpeg'};base64,${(item.product.primaryImage as any).imageData}` : undefined)
                           // legacy array of image urls
