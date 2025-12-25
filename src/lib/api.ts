@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore } from '@/stores/authStore';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://e-commerce-7lqm.onrender.com/api';
 
@@ -14,7 +15,23 @@ export const apiClient = axios.create({
 });
 
 
-// No Authorization header needed; rely on HttpOnly cookies for authentication
+// Attach JWT token to requests if available
+apiClient.interceptors.request.use(
+  (config) => {
+    try {
+      // Zustand store may not be available at import time, so get token dynamically
+      const token = useAuthStore.getState().token;
+      if (token) {
+        config.headers = config.headers || {};
+        config.headers['Authorization'] = `Bearer ${token}`;
+      }
+    } catch (e) {
+      // Ignore errors if store is not initialized
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 // Response interceptor - handle errors and token refresh
 let isRefreshing = false;
