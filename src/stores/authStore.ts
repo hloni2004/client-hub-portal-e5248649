@@ -24,9 +24,11 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (data: LoginDto) => {
         const response = await apiClient.post('/users/login', data);
-        const user: User = response.data;
+        const resp = response.data as any;
+        const user: User = resp.user;
+        const token: string | null = resp.accessToken ?? null;
         // Only store non-sensitive user info in memory (not localStorage)
-        set({ user, token: null, isAuthenticated: true });
+        set({ user, token, isAuthenticated: true });
 
         // After login, sync any locally-stored cart items to the server
         try {
