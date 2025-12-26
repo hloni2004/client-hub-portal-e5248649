@@ -108,9 +108,26 @@ export default function Checkout() {
         const syncRes = await useCartStore.getState().syncLocalToServer();
         if (!syncRes.success) {
           console.warn('Sync local cart to server returned:', syncRes);
+          toast({
+            title: 'Cart sync failed',
+            description: syncRes.message || 'Failed to synchronize your local cart with your account. Please try again or re-login.',
+            variant: 'destructive',
+          });
+          // Redirect to cart so the user can review and try again
+          navigate('/cart');
+          setLoading(false);
+          return;
         }
       } catch (e) {
         console.error('Error syncing local cart before checkout', e);
+        toast({
+          title: 'Cart sync error',
+          description: 'An unexpected error occurred while synchronizing your cart. Please try again.',
+          variant: 'destructive',
+        });
+        navigate('/cart');
+        setLoading(false);
+        return;
       }
 
       // Load shipping methods
@@ -279,6 +296,42 @@ export default function Checkout() {
       if (useNewAddress) {
         const addressRes = await apiClient.post('/checkout/addresses', address);
         addressId = addressRes.data.addressId;
+      }
+
+      // Re-fetch server cart and verify it matches the UI cart before placing order
+      try {
+        const latestCartRes = await apiClient.get(`/checkout/cart/${user?.userId}`);
+        const latestItems = latestCartRes.data.items || [];
+
+        // Basic sanity checks - if server cart differs from UI cart, refresh and ask user to retry
+        if (latestItems.length !== cartItems.length) {
+          toast({
+            title: 'Cart changed',
+            description: 'Your cart changed on the server. Refreshing checkout with the latest cart. Please review and place your order again.',
+            variant: 'destructive',
+          });
+          await loadCheckoutData();
+          setSubmitting(false);
+          return;
+        }
+
+        // Compare subtotal to detect price/quantity changes
+        const latestSubtotal = latestItems.reduce((s: number, it: any) => s + (it.quantity * it.product.basePrice), 0);
+        if (Math.abs(latestSubtotal - calculateSubtotal()) > 0.5) {
+          toast({
+            title: 'Cart totals changed',
+            description: 'Cart totals on the server do not match the totals shown. Refreshing checkout. Please review before placing your order.',
+            variant: 'destructive',
+          });
+          await loadCheckoutData();
+          setSubmitting(false);
+          return;
+        }
+      } catch (e) {
+        console.error('Failed to re-validate server cart before placing order:', e);
+        toast({ title: 'Error', description: 'Could not validate cart before placing order. Try again.', variant: 'destructive' });
+        setSubmitting(false);
+        return;
       }
 
       // Create order
