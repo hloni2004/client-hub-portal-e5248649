@@ -54,18 +54,63 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config;
 
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      // Optionally, redirect to login on 401
-      if (!window.location.pathname.includes('/auth/login')) {
-        window.location.href = '/auth/login';
-      }
-      return Promise.reject(error);
-    }
+    const status = error.response?.status;
 
-    // Handle 403 (forbidden) by logging a warning. Do not auto-redirect — let the caller decide.
-    if (error.response?.status === 403) {
-      console.warn('Request forbidden (403) - authentication may have expired');
-      return Promise.reject(error);
+    // Try to refresh token for 401 or 403 responses (only once per request)
+    if ((status === 401 || status === 403) && !originalRequest._retry) {
+      // Mark request as retried to avoid loops
+      originalRequest._retry = true;
+
+      if (!isRefreshing) {
+        isRefreshing = true;
+        try {
+          const refreshResponse = await apiClient.post('/users/refresh');
+          // Expect backend to return new access token in body
+          const newAccess = refreshResponse.data?.accessToken ?? null;
+
+          if (newAccess) {
+            // Update in-memory token store
+            try {
+              useAuthStore.getState().token = newAccess;
+              useAuthStore.getState().isAuthenticated = true;
+            } catch (e) {
+              console.warn('Could not update auth store after refresh', e);
+            }
+
+            processQueue(null, newAccess);
+          } else {
+            // No token returned — fail refresh
+            processQueue(new Error('No access token returned from refresh'), null);
+            // Redirect to login if not already there
+            if (!window.location.pathname.includes('/auth/login')) {
+              window.location.href = '/auth/login';
+            }
+            return Promise.reject(error);
+          }
+        } catch (refreshErr) {
+          processQueue(refreshErr, null);
+          if (!window.location.pathname.includes('/auth/login')) {
+            window.location.href = '/auth/login';
+          }
+          return Promise.reject(refreshErr);
+        } finally {
+          isRefreshing = false;
+        }
+      }
+
+      // Queue this request until refresh is done
+      return new Promise((resolve, reject) => {
+        failedQueue.push({
+          resolve: (token: string) => {
+            // Update header and retry
+            originalRequest.headers['Authorization'] = `Bearer ${token}`;
+            resolve(apiClient(originalRequest));
+          },
+          reject: (err: any) => {
+            reject(err);
+          },
+        });
+      });
     }
 
     return Promise.reject(error);
