@@ -53,6 +53,19 @@ export const useAuthStore = create<AuthState>()(
         }
         // Clear only in-memory state (no sensitive info in localStorage)
         set({ user: null, token: null, isAuthenticated: false });
+
+        // Clear cart store and persisted cart data so next user doesn't see previous user's cart
+        try {
+          const { useCartStore } = await import('./ecommerce/cartStore');
+          useCartStore.getState().clearCart();
+          try {
+            localStorage.removeItem('luxury-cart-storage');
+          } catch (e) {
+            // ignore localStorage errors
+          }
+        } catch (e) {
+          console.warn('Could not clear cart store on logout', e);
+        }
       },
 
       setUser: (user: User) => {

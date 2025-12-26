@@ -76,8 +76,16 @@ export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialo
       if (response.data.token) {
         setResetToken(response.data.token);
       }
+
+      const emailSent = response.data.emailSent === true;
+      if (!emailSent && !response.data.token) {
+        toast.error('We could not dispatch the OTP email. Please try the test email endpoint or contact support.');
+        return;
+      }
+
+      // Proceed to OTP step (token may be provided in development)
       setStep('otp');
-      toast.success('OTP code sent to your email');
+      if (emailSent) toast.success('OTP code sent to your email'); else toast.success('OTP token available for testing (dev)');
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 'Failed to send OTP. Please try again.';
       toast.error(errorMessage);

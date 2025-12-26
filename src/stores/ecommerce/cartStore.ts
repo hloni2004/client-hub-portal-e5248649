@@ -202,6 +202,40 @@ export const useCartStore = create<CartState>()(
           }
         }
 
+        // After syncing all local items, fetch authoritative server cart and replace local store
+        try {
+          const latestCartRes = await apiClient.get(`/carts/user/${user.userId}`);
+          const payload = latestCartRes.data;
+          if (payload && payload.success && payload.data) {
+            const serverCart = payload.data;
+            const serverItems = serverCart.items || [];
+
+            const mapped: CartItem[] = serverItems.map((si: any) => ({
+              id: si.cartItemId,
+              productId: si.product?.productId,
+              product: {
+                id: si.product?.productId,
+                name: si.product?.name,
+                basePrice: si.product?.basePrice,
+                images: si.product?.images || [],
+                primaryImage: si.product?.primaryImage ? { imageData: si.product.primaryImage.imageData } : undefined,
+              } as any,
+              variantId: 0,
+              colorId: si.colour?.colourId || 0,
+              sizeId: si.size?.sizeId || 0,
+              quantity: si.quantity,
+              unitPrice: si.product?.basePrice || 0,
+            }));
+
+            const subtotal = mapped.reduce((sum, it) => sum + it.unitPrice * it.quantity, 0);
+            const itemCount = mapped.reduce((sum, it) => sum + it.quantity, 0);
+
+            set({ items: mapped, subtotal, itemCount });
+          }
+        } catch (e) {
+          console.warn('Could not fetch server cart after sync, leaving local cart as-is', e);
+        }
+
         return { success: true };
       },
     }),

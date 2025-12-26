@@ -65,6 +65,9 @@ export default function Checkout() {
 
   // If user navigated from Cart page we may receive the local cart in location.state
   const passedCart = (location.state as any)?.cartFromCartPage as CartItem[] | undefined;
+
+  // Subscribe to live local cart store so Checkout reflects real-time local changes
+  const localCartItems = useCartStore((s) => s.items);
   
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -133,6 +136,30 @@ export default function Checkout() {
       setCartItems(mapped);
     }
 
+    // Keep UI updated when local cart changes (e.g., user edits cart in another tab or component)
+    if (localCartItems && localCartItems.length > 0) {
+      const mappedLocal = localCartItems.map((it) => ({
+        cartItemId: it.id,
+        product: {
+          productId: it.productId,
+          name: it.product.name,
+          basePrice: it.unitPrice,
+          primaryImage: it.product.primaryImage || (it.product.images ? { imageData: it.product.images[0] } : undefined),
+        },
+        colour: {
+          colourId: it.colorId,
+          name: it.product.colourName || (it.product.colours && it.product.colours[0] ? it.product.colours[0].name : 'N/A')
+        },
+        size: {
+          sizeId: it.sizeId,
+          sizeName: it.product.sizeName || (it.product.sizes && it.product.sizes[0] ? it.product.sizes[0].sizeName : 'N/A')
+        },
+        quantity: it.quantity,
+      } as CartItem));
+
+      setCartItems(mappedLocal);
+    }
+
     try {
       // Sync local cart to server (if any items exist locally and user just logged in)
       try {
@@ -160,6 +187,16 @@ export default function Checkout() {
         setLoading(false);
         return;
       }
+
+      // Refresh data on window focus to avoid showing stale data if user switched tabs
+      const onFocus = () => {
+        console.log('Window focused - refreshing checkout data');
+        loadCheckoutData();
+      };
+      window.addEventListener('focus', onFocus);
+      // Clean up listener when unmounted
+      try { window.removeEventListener('focus', onFocus); } catch (e) { /* ignore */ }
+
 
       // Load shipping methods
       const methodsRes = await apiClient.get('/checkout/shipping-methods');
