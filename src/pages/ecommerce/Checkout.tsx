@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { useCartStore } from '@/stores/ecommerce/cartStore';
 import { Button } from '@/components/ui/button';
@@ -61,6 +61,10 @@ export default function Checkout() {
   const { toast } = useToast();
   const { user } = useAuthStore();
   const { clearCart } = useCartStore();
+  const location = useLocation();
+
+  // If user navigated from Cart page we may receive the local cart in location.state
+  const passedCart = (location.state as any)?.cartFromCartPage as CartItem[] | undefined;
   
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -102,6 +106,33 @@ export default function Checkout() {
 
   const loadCheckoutData = async () => {
     setLoading(true);
+
+    // If cart was passed from Cart page, use it as immediate display data while we sync/validate with server
+    if (passedCart && passedCart.length > 0) {
+      console.log('Using cart passed from Cart page for initial display');
+      // Map local cart items shape to Checkout.CartItem shape
+      const mapped = passedCart.map((it) => ({
+        cartItemId: it.id,
+        product: {
+          productId: it.productId,
+          name: it.product.name,
+          basePrice: it.unitPrice,
+          primaryImage: it.product.primaryImage || (it.product.images ? { imageData: it.product.images[0] } : undefined),
+        },
+        colour: {
+          colourId: it.colorId,
+          name: it.product.colourName || (it.product.colours && it.product.colours[0] ? it.product.colours[0].name : 'N/A')
+        },
+        size: {
+          sizeId: it.sizeId,
+          sizeName: it.product.sizeName || (it.product.sizes && it.product.sizes[0] ? it.product.sizes[0].sizeName : 'N/A')
+        },
+        quantity: it.quantity,
+      } as CartItem));
+
+      setCartItems(mapped);
+    }
+
     try {
       // Sync local cart to server (if any items exist locally and user just logged in)
       try {

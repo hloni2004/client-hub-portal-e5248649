@@ -136,7 +136,7 @@ export default function Cart() {
                     </div>
                   </div>
 
-                  <Link to="/checkout">
+                  <Link to="/checkout" state={{ cartFromCartPage: items, subtotal }}>
                     <Button className="w-full h-14 text-sm tracking-[0.15em] uppercase">
                       Proceed to Checkout
                       <ArrowRight className="ml-2 h-4 w-4" />
