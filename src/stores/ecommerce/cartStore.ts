@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { toast } from 'sonner';
 import { persist } from 'zustand/middleware';
 import { Cart, CartItem, Product } from '@/types/ecommerce';
 
@@ -85,17 +86,25 @@ export const useCartStore = create<CartState>()(
           }
         } catch (error: any) {
           console.error('Error saving to cart:', error);
-          // Check if it's a stock error
-          if (error.response?.data?.message) {
+
+          // If authorization failed (403/401), fall back to local-only cart and inform the user
+          const status = error.response?.status;
+          if (status === 401 || status === 403) {
+            console.warn('Auth error when saving to server cart; falling back to local cart');
+            toast('Added to local cart. Please sign in to save to your account.');
+            // Let the flow continue to update local cart (do not return failure)
+          } else if (error.response?.data?.message) {
+            // Check if it's a stock or business error from API
             return { 
               success: false, 
               message: error.response.data.message 
             };
+          } else {
+            return {
+              success: false,
+              message: 'Failed to add item to cart. Please try again.'
+            };
           }
-          return {
-            success: false,
-            message: 'Failed to add item to cart. Please try again.'
-          };
         }
 
         // Update local state
@@ -181,8 +190,14 @@ export const useCartStore = create<CartState>()(
               sizeId: item.sizeId,
               quantity: item.quantity,
             });
-          } catch (e) {
+          } catch (e: any) {
             console.error('Failed to sync cart item', item, e);
+            const status = e.response?.status;
+            if (status === 401 || status === 403) {
+              console.warn('Auth error while syncing cart item; skipping sync for this item');
+              // Skip syncing this item (will remain in local cart)
+              continue;
+            }
             return { success: false, message: 'Failed to sync cart' };
           }
         }

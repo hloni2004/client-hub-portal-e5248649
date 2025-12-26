@@ -62,6 +62,12 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // Handle 403 (forbidden) by logging a warning. Do not auto-redirect — let the caller decide.
+    if (error.response?.status === 403) {
+      console.warn('Request forbidden (403) - authentication may have expired');
+      return Promise.reject(error);
+    }
+
     return Promise.reject(error);
   }
 );

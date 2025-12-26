@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,6 +55,7 @@ export default function AdminCategories() {
   const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -275,17 +276,17 @@ export default function AdminCategories() {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="mb-6 flex items-center gap-4">
-        <Button variant="ghost" onClick={() => navigate('/admin/dashboard')}>
-          Dashboard
+        <Button variant="ghost">
+          <Link to="/admin/dashboard" aria-label="Dashboard">Dashboard</Link>
         </Button>
-        <Button variant="ghost" onClick={() => navigate('/admin/products')}>
-          Products
+        <Button variant="ghost">
+          <Link to="/admin/products" aria-label="Products">Products</Link>
         </Button>
-        <Button variant="ghost" onClick={() => navigate('/admin/orders')}>
-          Orders
+        <Button variant="ghost">
+          <Link to="/admin/orders" aria-label="Orders">Orders</Link>
         </Button>
-        <Button variant="ghost" onClick={() => navigate('/admin/categories')}>
-          Categories
+        <Button variant="ghost">
+          <Link to="/admin/categories" aria-label="Categories">Categories</Link>
         </Button>
       </div>
 

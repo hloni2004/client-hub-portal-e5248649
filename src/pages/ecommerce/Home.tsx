@@ -109,34 +109,15 @@ export default function Home() {
               categories.slice(0, 4).map((category, index) => {
                 const product = categoryProducts[category.id]?.[0];
                 
-                // High-quality fashion images for each category type (fallback only)
-                const defaultCategoryImages: Record<string, string> = {
-                  'Men': 'https://images.unsplash.com/photo-1490578474895-699cd4e2cf59?w=800&q=80&fit=crop',
-                  'Women': 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=800&q=80&fit=crop',
-                  'Accessories': 'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=800&q=80&fit=crop',
-                  'Footwear': 'https://images.unsplash.com/photo-1603808033192-082d6919d3e1?w=800&q=80&fit=crop',
-                  'Dresses': 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=800&q=80&fit=crop',
-                  'Tops': 'https://images.unsplash.com/photo-1618932260643-eee4a2f652a6?w=800&q=80&fit=crop',
-                  'Bottoms': 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&q=80&fit=crop',
-                  'Outerwear': 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800&q=80&fit=crop',
-                };
-                
-                // Default fallback image
-                const defaultImage = 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800&q=80&fit=crop';
-                
-                // Priority: 1) Category image from database (blob or URL), 2) Default category image, 3) Fallback
-                let imageUrl = defaultImage;
-                
-                // Check if category has an image from database (could be blob base64 or URL)
-                if (category.image) {
-                  imageUrl = category.image;
+                // Use the image provided by the category (no fallback images)
+                // If a category has no image, we render a neutral placeholder (no external default image)
+                let imageUrl = category.image || '';
+                if (imageUrl) {
                   console.log(`Using category image from database for ${category.name}:`, imageUrl.substring(0, 50) + '...');
                 } else {
-                  // Use default category image as fallback
-                  imageUrl = defaultCategoryImages[category.name] || defaultImage;
-                  console.log(`Using default image for ${category.name}`);
+                  console.log(`No category image set for ${category.name}`);
                 }
-                
+
                 return (
                   <Link
                     key={category.id}
@@ -144,18 +125,26 @@ export default function Home() {
                     className="group relative aspect-[3/4] overflow-hidden bg-gray-200 animate-fade-in rounded-lg shadow-lg"
                     style={{ animationDelay: `${index * 0.1}s` }}
                   >
-                    <img
-                      src={imageUrl}
-                      alt={category.name}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      loading="eager"
-                      key={`${category.id}-${imageUrl}`}
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        console.error(`Image failed for ${category.name}, using fallback`);
-                        target.src = defaultCategoryImages[category.name] || defaultImage;
-                      }}
-                    />
+                    {imageUrl ? (
+                      <img
+                        src={imageUrl}
+                        alt={category.name}
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        loading="eager"
+                        key={`${category.id}-${imageUrl}`}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          console.error(`Image failed to load for ${category.name}`);
+                          // Hide the broken image rather than using a fallback
+                          target.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="absolute inset-0 w-full h-full bg-gray-200 flex items-center justify-center">
+                        <span className="text-muted-foreground">{category.name}</span>
+                      </div>
+                    )}
+
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent group-hover:from-black/80 transition-all duration-500" />
                     <div className="absolute inset-0 flex items-end p-6">
                       <div className="text-left">
