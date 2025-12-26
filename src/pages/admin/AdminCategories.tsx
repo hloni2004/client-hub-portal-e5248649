@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -141,48 +142,18 @@ export default function AdminCategories() {
     try {
       setSubmitting(true);
       
-      // Convert image to base64 if file is selected
-      let imageBase64 = formData.imageUrl || '';
-      if (imageFile) {
-        try {
-          const reader = new FileReader();
-          imageBase64 = await new Promise<string>((resolve, reject) => {
-            reader.onloadend = () => {
-              const base64String = reader.result as string;
-              // Remove data:image/xxx;base64, prefix to get just the base64 data
-              const base64Data = base64String.split(',')[1];
-              resolve(base64Data);
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(imageFile);
-          });
-          console.log('Image converted to base64, length:', imageBase64.length);
-        } catch (error) {
-          console.error('Error converting image:', error);
-          toast({
-            title: 'Error',
-            description: 'Failed to process image file',
-            variant: 'destructive',
-          });
-          setSubmitting(false);
-          return;
-        }
-      }
-
+      // Prepare category data (do not embed raw base64 in JSON)
       const categoryData = {
         name: formData.name,
         description: formData.description || '',
-        imageUrl: imageBase64,
+        imageUrl: '', // image will be uploaded separately as multipart
         isActive: formData.isActive,
       };
 
-      console.log('Submitting category data:', { 
-        ...categoryData, 
-        imageUrl: categoryData.imageUrl ? `${categoryData.imageUrl.substring(0, 50)}...` : 'none' 
-      });
+      console.log('Submitting category data (without file):', categoryData);
 
       if (selectedCategory) {
-        // Update existing category
+        // Update existing category first
         const response = await apiClient.put('/categories/update', {
           categoryId: selectedCategory.categoryId,
           ...categoryData,
@@ -190,32 +161,54 @@ export default function AdminCategories() {
 
         console.log('Update response:', response.data);
 
-        if (response.data.success) {
-          toast({
-            title: 'Success',
-            description: 'Category updated successfully',
-          });
-          // Refresh both admin categories and product store categories
+        if (response.data && response.data.success) {
+          // If file selected, upload via multipart to new endpoint
+          if (imageFile) {
+            try {
+              const fd = new FormData();
+              fd.append('file', imageFile);
+              const uploadResp = await apiClient.post(`/categories/upload/${selectedCategory.categoryId}`, fd, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+              });
+              console.log('Upload response:', uploadResp.data);
+            } catch (uploadError: any) {
+              console.error('Image upload error:', uploadError.response?.data || uploadError);
+              toast({ title: 'Error', description: uploadError.response?.data?.message || 'Image upload failed', variant: 'destructive' });
+            }
+          }
+
+          toast({ title: 'Success', description: 'Category updated successfully' });
           fetchCategories();
-          // Clear the product store cache to refetch updated categories
           const productStore = useProductStore.getState();
           useProductStore.setState({ categories: [] });
           productStore.fetchCategories();
           handleCloseDialog();
         }
       } else {
-        // Create new category
+        // Create new category first (without file)
         const response = await apiClient.post('/categories/create', categoryData);
-
         console.log('Create response:', response.data);
 
+        // Response body should contain created Category
+        const createdCategory = response.data;
+        // If file selected, upload it using the returned categoryId
+        if (imageFile && createdCategory && createdCategory.categoryId) {
+          try {
+            const fd = new FormData();
+            fd.append('file', imageFile);
+            const uploadResp = await apiClient.post(`/categories/upload/${createdCategory.categoryId}`, fd, {
+              headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            console.log('Upload response:', uploadResp.data);
+          } catch (uploadError: any) {
+            console.error('Image upload error:', uploadError.response?.data || uploadError);
+            toast({ title: 'Error', description: uploadError.response?.data?.message || 'Image upload failed', variant: 'destructive' });
+          }
+        }
+
         if (response.status === 201 || response.data) {
-          toast({
-            title: 'Success',
-            description: 'Category created successfully',
-          });
+          toast({ title: 'Success', description: 'Category created successfully' });
           fetchCategories();
-          // Clear the product store cache to refetch updated categories
           const productStore = useProductStore.getState();
           useProductStore.setState({ categories: [] });
           productStore.fetchCategories();
@@ -282,16 +275,16 @@ export default function AdminCategories() {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="mb-6 flex items-center gap-4">
-        <Button variant="ghost" onClick={() => window.location.href = '/admin/dashboard'}>
+        <Button variant="ghost" onClick={() => navigate('/admin/dashboard')}>
           Dashboard
         </Button>
-        <Button variant="ghost" onClick={() => window.location.href = '/admin/products'}>
+        <Button variant="ghost" onClick={() => navigate('/admin/products')}>
           Products
         </Button>
-        <Button variant="ghost" onClick={() => window.location.href = '/admin/orders'}>
+        <Button variant="ghost" onClick={() => navigate('/admin/orders')}>
           Orders
         </Button>
-        <Button variant="ghost" onClick={() => window.location.href = '/admin/categories'}>
+        <Button variant="ghost" onClick={() => navigate('/admin/categories')}>
           Categories
         </Button>
       </div>
@@ -429,6 +422,17 @@ export default function AdminCategories() {
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
+                      // Basic client-side validation
+                      if (!file.type.startsWith('image/')) {
+                        toast({ title: 'Invalid file', description: 'Please select an image file', variant: 'destructive' });
+                        return;
+                      }
+                      const maxSize = 2 * 1024 * 1024; // 2MB
+                      if (file.size > maxSize) {
+                        toast({ title: 'File too large', description: 'Please use an image smaller than 2MB', variant: 'destructive' });
+                        return;
+                      }
+
                       setImageFile(file);
                       const reader = new FileReader();
                       reader.onloadend = () => {
