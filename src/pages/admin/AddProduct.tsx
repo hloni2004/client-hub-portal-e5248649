@@ -490,7 +490,7 @@ export default function AddProduct() {
             </div>
 
             <div className="flex justify-end gap-4">
-              <Button type="button" variant="outline" onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/products') : window.location.href = '/admin/products')>
+              <Button type="button" variant="outline" onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/products') : window.location.href = '/admin/products')}>
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>
