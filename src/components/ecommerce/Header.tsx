@@ -146,17 +146,17 @@ export function Header() {
               <DropdownMenuSeparator />
               {user?.roleName === 'ADMIN' && (
                 <>
-                  <DropdownMenuItem onClick={() => navigate('/admin/dashboard')} className="cursor-pointer">
+                  <DropdownMenuItem onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/dashboard') : window.location.href = '/admin/dashboard')} className="cursor-pointer">
                     <span>Admin Dashboard</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                 </>
               )}
-              <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer">
+              <DropdownMenuItem onClick={() => (typeof navigate !== 'undefined' ? navigate('/profile') : window.location.href = '/profile')} className="cursor-pointer">
                 <User className="mr-2 h-4 w-4" />
                 <span>My Profile</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/orders')} className="cursor-pointer">
+              <DropdownMenuItem onClick={() => (typeof navigate !== 'undefined' ? navigate('/orders') : window.location.href = '/orders')} className="cursor-pointer">
                 <span>My Orders</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />

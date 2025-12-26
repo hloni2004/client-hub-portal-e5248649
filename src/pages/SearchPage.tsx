@@ -175,7 +175,7 @@ export default function Search() {
                               <div
                                 key={project.projectId}
                                 className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent cursor-pointer"
-                                onClick={() => navigate(`/projects/${project.projectId}`)}
+                                onClick={() => (typeof navigate !== 'undefined' ? navigate(`/projects/${project.projectId}`) : window.location.href = `/projects/${project.projectId}`)}
                               >
                                 <div className="flex-1">
                                   <p className="font-medium">{project.title}</p>
@@ -319,7 +319,7 @@ export default function Search() {
                           <div
                             key={project.projectId}
                             className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent cursor-pointer"
-                            onClick={() => navigate(`/projects/${project.projectId}`)}
+                            onClick={() => (typeof navigate !== 'undefined' ? navigate(`/projects/${project.projectId}`) : window.location.href = `/projects/${project.projectId}`)}
                           >
                             <div className="flex-1">
                               <p className="font-medium">{project.title}</p>

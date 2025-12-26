@@ -166,7 +166,7 @@ export default function AdminCustomers() {
     <div className="container mx-auto py-8">
       <div className="mb-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/admin/dashboard')}>
+          <Button variant="ghost" size="sm" onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/dashboard') : window.location.href = '/admin/dashboard')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>

@@ -204,7 +204,7 @@ export default function AdminOrders() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate('/admin/dashboard')}
+            onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/dashboard') : window.location.href = '/admin/dashboard')}
             className="gap-2"
           >
             <ArrowLeft className="w-4 h-4" />

@@ -272,18 +272,18 @@ export default function EditProduct() {
   return (
     <div className="container mx-auto py-8">
       <div className="mb-6 flex items-center justify-between">
-        <Button variant="ghost" onClick={() => navigate('/admin/products')}>
+        <Button variant="ghost" onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/products') : window.location.href = '/admin/products')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Products
         </Button>
         <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => navigate('/admin/dashboard')}>
+          <Button variant="ghost" onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/dashboard') : window.location.href = '/admin/dashboard')}>
             Dashboard
           </Button>
-          <Button variant="ghost" onClick={() => navigate('/admin/products')}>
+          <Button variant="ghost" onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/products') : window.location.href = '/admin/products')}>
             Products
           </Button>
-          <Button variant="ghost" onClick={() => navigate('/admin/categories')}>
+          <Button variant="ghost" onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/categories') : window.location.href = '/admin/categories')}>
             Categories
           </Button>
         </div>
@@ -547,7 +547,7 @@ export default function EditProduct() {
             </div>
 
             <div className="flex justify-end gap-4">
-              <Button type="button" variant="outline" onClick={() => navigate('/admin/products')}>
+              <Button type="button" variant="outline" onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/products') : window.location.href = '/admin/products')}>
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>

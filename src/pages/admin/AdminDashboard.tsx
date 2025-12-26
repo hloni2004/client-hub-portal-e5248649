@@ -59,8 +59,9 @@ export default function AdminDashboard() {
       value: stats.totalProducts,
       icon: Package,
       description: 'Products in inventory',
-      action: () => navigate('/admin/products'),
+      action: () => (typeof navigate !== 'undefined' ? navigate('/admin/products') : window.location.href = '/admin/products'),
     },
+
     {
       title: 'Total Users',
       value: stats.totalUsers,
@@ -123,33 +124,33 @@ export default function AdminDashboard() {
             <CardDescription>Common admin tasks</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Button className="w-full justify-start" onClick={() => navigate('/admin/products/add')}>
+            <Button className="w-full justify-start" onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/products/add') : window.location.href = '/admin/products/add')}>
               <Package className="mr-2 h-4 w-4" />
               Add New Product
             </Button>
-            <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/admin/products')}>
+            <Button className="w-full justify-start" variant="outline" onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/products') : window.location.href = '/admin/products')}>
               <Package className="mr-2 h-4 w-4" />
               Manage Products
             </Button>
-            <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/admin/orders')}>
+            <Button className="w-full justify-start" variant="outline" onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/orders') : window.location.href = '/admin/orders')}>
               <ShoppingCart className="mr-2 h-4 w-4" />
               Manage Orders
             </Button>
-            <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/admin/categories')}>
+            <Button className="w-full justify-start" variant="outline" onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/categories') : window.location.href = '/admin/categories')}>
               <FolderTree className="mr-2 h-4 w-4" />
               Manage Categories
             </Button>
-            <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/admin/promos')}>
+            <Button className="w-full justify-start" variant="outline" onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/promos') : window.location.href = '/admin/promos')}>
               <Tag className="mr-2 h-4 w-4" />
               Manage Promo Codes
             </Button>
-            <Button className="w-full justify-start" variant="outline" onClick={() => navigate('/admin/customers')}>
+            <Button className="w-full justify-start" variant="outline" onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/customers') : window.location.href = '/admin/customers')}>
               <UserCircle className="mr-2 h-4 w-4" />
               Manage Customers
             </Button>
             <Button className="w-full justify-start" variant="destructive" onClick={() => {
               logout();
-              navigate('/auth/login');
+              if (typeof navigate !== 'undefined') navigate('/auth/login'); else window.location.href = '/auth/login';
             }}>
               <LogOut className="mr-2 h-4 w-4" />
               Logout

@@ -161,7 +161,7 @@ export default function Orders() {
   };
 
   const getProductImageUrl = (imageData?: string) => {
-    if (!imageData) return '/images/placeholder.png';
+    if (!imageData) return '/images/logo/logo.png';
     // Backend now sends full data URL with prefix
     if (imageData.startsWith('data:')) return imageData;
     return `data:image/jpeg;base64,${imageData}`;
@@ -197,7 +197,7 @@ export default function Orders() {
                 <ShoppingBag className="h-16 w-16 text-gray-400 mb-4" />
                 <h2 className="text-2xl font-bold mb-2">No orders yet</h2>
                 <p className="text-gray-600 mb-4">Start shopping to see your orders here</p>
-                <Button onClick={() => navigate('/shop')}>Start Shopping</Button>
+                <Button onClick={() => (typeof navigate !== 'undefined' ? navigate('/shop') : window.location.href = '/shop')}>Start Shopping</Button>
               </CardContent>
             </Card>
           </div>
@@ -237,12 +237,12 @@ export default function Orders() {
                       src={getProductImageUrl(item.product.primaryImage?.imageData)}
                       alt={item.product.name}
                       className="w-20 h-20 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
-                      onClick={() => navigate(`/product/${item.product.productId}`)}
+                      onClick={() => (typeof navigate !== 'undefined' ? navigate(`/product/${item.product.productId}`) : window.location.href = `/product/${item.product.productId}`)}
                     />
                     <div className="flex-1">
                       <p 
                         className="font-semibold cursor-pointer hover:text-primary transition-colors"
-                        onClick={() => navigate(`/product/${item.product.productId}`)}
+                        onClick={() => (typeof navigate !== 'undefined' ? navigate(`/product/${item.product.productId}`) : window.location.href = `/product/${item.product.productId}`)}
                       >
                         {item.product.name}
                       </p>
@@ -257,7 +257,7 @@ export default function Orders() {
                           variant="outline"
                           size="sm"
                           className="mt-2"
-                          onClick={() => navigate(`/product/${item.product.productId}#reviews`)}
+                          onClick={() => (typeof navigate !== 'undefined' ? navigate(`/product/${item.product.productId}#reviews`) : (window.location.href = `/product/${item.product.productId}#reviews`))}
                         >
                           <Star className="h-3 w-3 mr-1" />
                           Write Review
@@ -271,7 +271,7 @@ export default function Orders() {
                         variant="link"
                         size="sm"
                         className="mt-2 p-0 h-auto text-xs"
-                        onClick={() => navigate(`/product/${item.product.productId}#reviews`)}
+                        onClick={() => (typeof navigate !== 'undefined' ? navigate(`/product/${item.product.productId}#reviews`) : window.location.href = `/product/${item.product.productId}#reviews`)}
                       >
                         <MessageSquare className="h-3 w-3 mr-1" />
                         See Reviews

@@ -305,7 +305,7 @@ export default function Checkout() {
       });
 
       // Navigate to order confirmation or orders page
-      setTimeout(() => navigate('/orders'), 2000);
+      setTimeout(() => { if (typeof navigate !== 'undefined') navigate('/orders'); else window.location.href = '/orders'; }, 2000);
     } catch (error: any) {
       console.error('Failed to place order:', error);
       console.error('Error response:', error.response?.data);
@@ -325,7 +325,7 @@ export default function Checkout() {
   };
 
   const getProductImageUrl = (imageData?: string) => {
-    if (!imageData) return '/images/placeholder.png';
+    if (!imageData) return '/images/logo/logo.png';
     // Backend now sends full data URL with prefix
     if (imageData.startsWith('data:')) return imageData;
     return `data:image/jpeg;base64,${imageData}`;
@@ -353,7 +353,7 @@ export default function Checkout() {
                 <Package className="h-16 w-16 text-gray-400 mb-4" />
                 <h2 className="text-2xl font-bold mb-2">Your cart is empty</h2>
                 <p className="text-gray-600 mb-4">Add some items to your cart before checking out</p>
-                <Button onClick={() => navigate('/shop')}>Continue Shopping</Button>
+                <Button onClick={() => (typeof navigate !== 'undefined' ? navigate('/shop') : window.location.href = '/shop')}>Continue Shopping</Button>
               </CardContent>
             </Card>
           </div>

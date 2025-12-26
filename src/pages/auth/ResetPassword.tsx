@@ -185,7 +185,7 @@ export default function ResetPassword() {
             <p className="text-sm text-center text-muted-foreground">
               Password reset links expire after 1 hour for security reasons.
             </p>
-            <Button onClick={() => navigate('/auth/login')} className="w-full">
+            <Button onClick={() => (typeof navigate !== 'undefined' ? navigate('/auth/login') : window.location.href = '/auth/login')} className="w-full">
               Back to Login
             </Button>
           </CardFooter>
@@ -213,7 +213,7 @@ export default function ResetPassword() {
             <p className="text-sm text-center text-muted-foreground">
               Redirecting to login page...
             </p>
-            <Button onClick={() => navigate('/auth/login')} className="w-full">
+            <Button onClick={() => (typeof navigate !== 'undefined' ? navigate('/auth/login') : window.location.href = '/auth/login')} className="w-full">
               Go to Login
             </Button>
           </CardFooter>

@@ -304,7 +304,7 @@ export default function EcommerceProfile() {
   };
 
   const getProductImageUrl = (imageData?: string) => {
-    if (!imageData) return '/images/placeholder.png';
+    if (!imageData) return '/images/logo/logo.png';
     if (imageData.startsWith('data:')) return imageData;
     return `data:image/jpeg;base64,${imageData}`;
   };

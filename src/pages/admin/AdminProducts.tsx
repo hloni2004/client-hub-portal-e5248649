@@ -98,16 +98,16 @@ export default function AdminProducts() {
   return (
     <div className="container mx-auto py-8">
       <div className="mb-6 flex items-center gap-4">
-        <Button variant="ghost" onClick={() => navigate('/admin/dashboard')}>
+        <Button variant="ghost" onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/dashboard') : window.location.href = '/admin/dashboard')}>
           Dashboard
         </Button>
-        <Button variant="ghost" onClick={() => navigate('/admin/products')}>
+        <Button variant="ghost" onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/products') : window.location.href = '/admin/products')}>
           Products
         </Button>
-        <Button variant="ghost" onClick={() => navigate('/admin/orders')}>
+        <Button variant="ghost" onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/orders') : window.location.href = '/admin/orders')}>
           Orders
         </Button>
-        <Button variant="ghost" onClick={() => navigate('/admin/categories')}>
+        <Button variant="ghost" onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/categories') : window.location.href = '/admin/categories')}>
           Categories
         </Button>
       </div>
@@ -119,7 +119,7 @@ export default function AdminProducts() {
               <CardTitle className="text-2xl">Products</CardTitle>
               <CardDescription>Manage your product inventory</CardDescription>
             </div>
-            <Button onClick={() => navigate('/admin/products/add')}>
+            <Button onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/products/add') : window.location.href = '/admin/products/add')}>
               <Plus className="mr-2 h-4 w-4" />
               Add Product
             </Button>
@@ -200,14 +200,14 @@ export default function AdminProducts() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => navigate(`/product/${product.productId}`)}
+                              onClick={() => (typeof navigate !== 'undefined' ? navigate(`/product/${product.productId}`) : window.location.href = `/product/${product.productId}`)}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => navigate(`/admin/products/edit/${product.productId}`)}
+                              onClick={() => (typeof navigate !== 'undefined' ? navigate(`/admin/products/edit/${product.productId}`) : window.location.href = `/admin/products/edit/${product.productId}`)}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
