@@ -63,11 +63,11 @@ export default function Checkout() {
   const { clearCart } = useCartStore();
   const location = useLocation();
 
-  // If user navigated from Cart page we may receive the local cart in location.state
-  const passedCart = (location.state as any)?.cartFromCartPage as CartItem[] | undefined;
+  // IMPORTANT: For security and correctness, Checkout ignores any cart passed via route state or local persisted storage.
+  // The server cart is the single source of truth and will be fetched after synchronization.
+  // We'll still hold a local state for rendering server response only after successful fetch.
 
-  // Subscribe to live local cart store so Checkout reflects real-time local changes
-  const localCartItems = useCartStore((s) => s.items);
+  // no passedCart, no direct use of persisted state here
   
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -104,98 +104,108 @@ export default function Checkout() {
       navigate('/auth/login');
       return;
     }
-    loadCheckoutData();
+
+    let cancelled = false;
+
+    const doLoad = async () => {
+      await loadCheckoutData();
+    };
+
+    doLoad();
+
+    // Refresh data on window focus to avoid showing stale data if user switched tabs
+    const onFocus = () => {
+      console.log('Window focused - refreshing checkout data');
+      doLoad();
+    };
+    window.addEventListener('focus', onFocus);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('focus', onFocus);
+    };
   }, [user]);
 
   const loadCheckoutData = async () => {
     setLoading(true);
 
-    // If cart was passed from Cart page, use it as immediate display data while we sync/validate with server
-    if (passedCart && passedCart.length > 0) {
-      console.log('Using cart passed from Cart page for initial display');
-      // Map local cart items shape to Checkout.CartItem shape
-      const mapped = passedCart.map((it) => ({
-        cartItemId: it.id,
-        product: {
-          productId: it.productId,
-          name: it.product.name,
-          basePrice: it.unitPrice,
-          primaryImage: it.product.primaryImage || (it.product.images ? { imageData: it.product.images[0] } : undefined),
-        },
-        colour: {
-          colourId: it.colorId,
-          name: it.product.colourName || (it.product.colours && it.product.colours[0] ? it.product.colours[0].name : 'N/A')
-        },
-        size: {
-          sizeId: it.sizeId,
-          sizeName: it.product.sizeName || (it.product.sizes && it.product.sizes[0] ? it.product.sizes[0].sizeName : 'N/A')
-        },
-        quantity: it.quantity,
-      } as CartItem));
-
-      setCartItems(mapped);
-    }
-
-    // Keep UI updated when local cart changes (e.g., user edits cart in another tab or component)
-    if (localCartItems && localCartItems.length > 0) {
-      const mappedLocal = localCartItems.map((it) => ({
-        cartItemId: it.id,
-        product: {
-          productId: it.productId,
-          name: it.product.name,
-          basePrice: it.unitPrice,
-          primaryImage: it.product.primaryImage || (it.product.images ? { imageData: it.product.images[0] } : undefined),
-        },
-        colour: {
-          colourId: it.colorId,
-          name: it.product.colourName || (it.product.colours && it.product.colours[0] ? it.product.colours[0].name : 'N/A')
-        },
-        size: {
-          sizeId: it.sizeId,
-          sizeName: it.product.sizeName || (it.product.sizes && it.product.sizes[0] ? it.product.sizes[0].sizeName : 'N/A')
-        },
-        quantity: it.quantity,
-      } as CartItem));
-
-      setCartItems(mappedLocal);
-    }
-
+    // Strict single source of truth: ignore any passed or persisted cart data on Checkout mount.
+    // 1) Synchronize local items to the server (so server has all local items)
     try {
-      // Sync local cart to server (if any items exist locally and user just logged in)
-      try {
-        const syncRes = await useCartStore.getState().syncLocalToServer();
-        if (!syncRes.success) {
-          console.warn('Sync local cart to server returned:', syncRes);
-          toast({
-            title: 'Cart sync failed',
-            description: syncRes.message || 'Failed to synchronize your local cart with your account. Please try again or re-login.',
-            variant: 'destructive',
-          });
-          // Redirect to cart so the user can review and try again
-          navigate('/cart');
-          setLoading(false);
-          return;
-        }
-      } catch (e) {
-        console.error('Error syncing local cart before checkout', e);
+      const syncRes = await useCartStore.getState().syncLocalToServer();
+      if (!syncRes.success) {
+        console.warn('Sync local cart to server returned:', syncRes);
         toast({
-          title: 'Cart sync error',
-          description: 'An unexpected error occurred while synchronizing your cart. Please try again.',
+          title: 'Cart sync failed',
+          description: syncRes.message || 'Failed to synchronize your local cart with your account. Please try again or re-login.',
           variant: 'destructive',
         });
+        // Redirect to cart so the user can review and try again
         navigate('/cart');
         setLoading(false);
         return;
       }
+    } catch (e) {
+      console.error('Error syncing local cart before checkout', e);
+      toast({
+        title: 'Cart sync error',
+        description: 'An unexpected error occurred while synchronizing your cart. Please try again.',
+        variant: 'destructive',
+      });
+      navigate('/cart');
+      setLoading(false);
+      return;
+    }
 
-      // Refresh data on window focus to avoid showing stale data if user switched tabs
-      const onFocus = () => {
-        console.log('Window focused - refreshing checkout data');
-        loadCheckoutData();
-      };
-      window.addEventListener('focus', onFocus);
-      // Clean up listener when unmounted
-      try { window.removeEventListener('focus', onFocus); } catch (e) { /* ignore */ }
+    // 2) Fetch authoritative server cart and replace local store entirely (do not merge)
+    try {
+      const cartRes = await apiClient.get(`/checkout/cart/${user?.userId}`);
+      const serverCart = cartRes.data || {};
+      const items = serverCart.items || [];
+
+      const mapped = items.map((si: any) => ({
+        cartItemId: si.cartItemId,
+        product: {
+          productId: si.product?.productId,
+          name: si.product?.name,
+          basePrice: si.product?.basePrice,
+          primaryImage: si.product?.primaryImage ? { imageData: si.product.primaryImage.imageData } : undefined,
+        },
+        colour: {
+          colourId: si.colour?.colourId,
+          name: si.colour?.name || 'N/A',
+        },
+        size: {
+          sizeId: si.size?.sizeId,
+          sizeName: si.size?.sizeName || 'N/A',
+        },
+        quantity: si.quantity,
+      } as CartItem));
+
+      // If server cart is empty, redirect to cart page
+      if (mapped.length === 0) {
+        toast({
+          title: 'Cart is empty',
+          description: 'Add some items to your cart before checking out',
+        });
+        setLoading(false);
+        navigate('/cart');
+        return;
+      }
+
+      // Replace local store with server response
+      useCartStore.setState({ items: mapped, subtotal: mapped.reduce((s, it) => s + (it.product.basePrice * it.quantity), 0), itemCount: mapped.reduce((s, it) => s + it.quantity, 0) });
+
+      // Set checkout UI state only after authoritative server cart is retrieved
+      setCartItems(mapped);
+    } catch (e: any) {
+      console.error('Error fetching server cart for checkout:', e);
+      toast({ title: 'Error', description: e.response?.data?.message || 'Failed to load checkout cart', variant: 'destructive' });
+      navigate('/cart');
+      setLoading(false);
+      return;
+    }
+
 
 
       // Load shipping methods
@@ -208,32 +218,7 @@ export default function Checkout() {
 
       // Load cart items
       try {
-        const cartRes = await apiClient.get(`/checkout/cart/${user?.userId}`);
-        console.log('Cart response:', cartRes.data);
-        const items = cartRes.data.items || [];
-        
-        // If cart is empty, redirect to cart page
-        if (items.length === 0) {
-          toast({
-            title: 'Cart is empty',
-            description: 'Add some items to your cart before checking out',
-          });
-          navigate('/cart');
-          return;
-        }
-        
-        setCartItems(items);
-      } catch (cartError: any) {
-        // Cart not found (likely deleted after previous order)
-        console.error('Cart error:', cartError);
-        toast({
-          title: 'Cart is empty',
-          description: 'Add some items to your cart before checking out',
-        });
-        setLoading(false);
-        navigate('/cart');
-        return;
-      }
+
 
       // Load saved addresses
       const addressRes = await apiClient.get(`/checkout/addresses/user/${user?.userId}`);

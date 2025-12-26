@@ -166,6 +166,27 @@ export default function ResetPassword() {
     );
   }
 
+  const [resendEmail, setResendEmail] = useState('');
+
+  const handleResend = async () => {
+    if (!resendEmail || !resendEmail.includes('@')) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    try {
+      const resp = await apiClient.post('/users/resend-reset-email', { email: resendEmail });
+      const emailSent = resp.data?.emailSent === true;
+      if (emailSent) {
+        toast.success('Reset email resent. Check your inbox (and spam).');
+      } else {
+        // If server couldn't send the email, give a helpful message (still generic about account existence)
+        toast.error('We could not dispatch the reset email. Please use the test email endpoint or contact support.');
+      }
+    } catch (e: any) {
+      toast.error((e.response?.data?.message) || 'Failed to request resend. Please try again later.');
+    }
+  };
+
   if (!isValidToken) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-subtle p-4">
@@ -181,13 +202,24 @@ export default function ResetPassword() {
               This password reset link is invalid or has expired.
             </CardDescription>
           </CardHeader>
-          <CardFooter className="flex flex-col space-y-4">
+          <CardContent className="space-y-4">
             <p className="text-sm text-center text-muted-foreground">
-              Password reset links expire after 1 hour for security reasons.
+              Enter your email to request a fresh reset link. We will not reveal whether an account exists for this email.
             </p>
-            <Button onClick={() => (typeof navigate !== 'undefined' ? navigate('/auth/login') : window.location.href = '/auth/login')} className="w-full">
-              Back to Login
-            </Button>
+            <div>
+              <Label htmlFor="resendEmail">Email address</Label>
+              <Input id="resendEmail" placeholder="your.email@example.com" value={resendEmail} onChange={(e) => setResendEmail(e.target.value)} />
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-4">
+            <div className="flex gap-3">
+              <Button onClick={() => (typeof navigate !== 'undefined' ? navigate('/auth/login') : window.location.href = '/auth/login')} className="flex-1">
+                Back to Login
+              </Button>
+              <Button onClick={handleResend} className="flex-1">
+                Resend Email
+              </Button>
+            </div>
           </CardFooter>
         </Card>
       </div>
