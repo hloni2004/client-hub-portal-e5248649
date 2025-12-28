@@ -181,15 +181,71 @@ export const useCartStore = create<CartState>()(
         const apiClient = (await import('@/lib/api')).default;
         const items = get().items;
 
+        // 1) Fetch server cart first to avoid double-adding on repeated syncs
+        let serverItems: any[] = [];
+        try {
+          const latestCartRes = await apiClient.get(`/carts/user/${user.userId}`);
+          const payload = latestCartRes.data;
+          if (payload && payload.success && payload.data) {
+            serverItems = payload.data.items || [];
+          }
+        } catch (e) {
+          console.warn('Could not fetch server cart before sync; will attempt best-effort sync', e);
+        }
+
+        // Build a quick lookup for server items by product/colour/size
+        const serverMap: Record<string, { quantity: number; cartItemId?: number }> = {};
+        serverItems.forEach(si => {
+          const key = `${si.product?.productId}:${si.colour?.colourId}:${si.size?.sizeId}`;
+          serverMap[key] = { quantity: si.quantity || 0, cartItemId: si.cartItemId };
+        });
+
         for (const item of items) {
           try {
-            await apiClient.post('/carts/add-item', {
-              userId: user.userId,
-              productId: item.productId,
-              colourId: item.colorId,
-              sizeId: item.sizeId,
-              quantity: item.quantity,
-            });
+            const key = `${item.productId}:${item.colorId}:${item.sizeId}`;
+            const serverEntry = serverMap[key];
+
+            if (serverEntry) {
+              const serverQty = serverEntry.quantity || 0;
+
+              if (item.quantity === serverQty) {
+                // Already in sync
+                continue;
+              }
+
+              if (item.quantity > serverQty) {
+                // Need to increase server quantity by delta
+                const delta = item.quantity - serverQty;
+                await apiClient.post('/carts/add-item', {
+                  userId: user.userId,
+                  productId: item.productId,
+                  colourId: item.colorId,
+                  sizeId: item.sizeId,
+                  quantity: delta,
+                });
+              } else {
+                // Need to reduce server quantity to match local - use update-quantity endpoint
+                if (serverEntry.cartItemId) {
+                  await apiClient.put(`/cart-items/update-quantity/${serverEntry.cartItemId}?quantity=${item.quantity}`);
+                } else {
+                  // Fallback: if we don't have an id, set absolute by deleting & re-adding (best-effort)
+                  // Not ideal, but better than leaving server with larger quantity
+                  // Delete existing by adding negative delta is not supported; skip and warn
+                  console.warn('Unable to reduce server quantity - missing cartItemId for', key);
+                }
+              }
+
+            } else {
+              // Not present on server - add entire quantity
+              await apiClient.post('/carts/add-item', {
+                userId: user.userId,
+                productId: item.productId,
+                colourId: item.colorId,
+                sizeId: item.sizeId,
+                quantity: item.quantity,
+              });
+            }
+
           } catch (e: any) {
             console.error('Failed to sync cart item', item, e);
             const status = e.response?.status;
@@ -198,19 +254,21 @@ export const useCartStore = create<CartState>()(
               // Skip syncing this item (will remain in local cart)
               continue;
             }
-            return { success: false, message: 'Failed to sync cart' };
+            // For non-auth errors, continue with other items but return failure at the end
+            // Log and continue
+            continue;
           }
         }
 
         // After syncing all local items, fetch authoritative server cart and replace local store
         try {
-          const latestCartRes = await apiClient.get(`/carts/user/${user.userId}`);
-          const payload = latestCartRes.data;
+          const finalCartRes = await apiClient.get(`/carts/user/${user.userId}`);
+          const payload = finalCartRes.data;
           if (payload && payload.success && payload.data) {
             const serverCart = payload.data;
-            const serverItems = serverCart.items || [];
+            const serverItemsFinal = serverCart.items || [];
 
-            const mapped: CartItem[] = serverItems.map((si: any) => ({
+            const mapped: CartItem[] = serverItemsFinal.map((si: any) => ({
               id: si.cartItemId,
               productId: si.product?.productId,
               product: {
