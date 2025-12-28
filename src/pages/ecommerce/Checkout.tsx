@@ -79,9 +79,16 @@ export default function Checkout() {
   const [useNewAddress, setUseNewAddress] = useState(true);
   
   // Promo code state
-  const [promoCode, setPromoCode] = useState('');
-  const [appliedPromo, setAppliedPromo] = useState<any>(null);
-  const [promoDiscount, setPromoDiscount] = useState(0);
+  // Promo code state with persistence
+  const [promoCode, setPromoCode] = useState(() => sessionStorage.getItem('appliedPromoCode') || '');
+  const [appliedPromo, setAppliedPromo] = useState<any>(() => {
+    const stored = sessionStorage.getItem('appliedPromoData');
+    return stored ? JSON.parse(stored) : null;
+  });
+  const [promoDiscount, setPromoDiscount] = useState(() => {
+    const stored = sessionStorage.getItem('appliedPromoDiscount');
+    return stored ? parseFloat(stored) : 0;
+  });
   const [applyingPromo, setApplyingPromo] = useState(false);
   const [promoMessage, setPromoMessage] = useState('');
   
@@ -109,6 +116,10 @@ export default function Checkout() {
 
     const doLoad = async () => {
       await loadCheckoutData();
+      // Revalidate promo code on reload if present
+      if (promoCode) {
+        await handleApplyPromo(true);
+      }
     };
 
     doLoad();
@@ -124,6 +135,7 @@ export default function Checkout() {
       cancelled = true;
       window.removeEventListener('focus', onFocus);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const loadCheckoutData = async () => {
@@ -256,7 +268,7 @@ export default function Checkout() {
     return calculateSubtotal() - promoDiscount + getShippingCost() + calculateTax();
   };
 
-  const handleApplyPromo = async () => {
+  const handleApplyPromo = async (silent = false) => {
     if (!promoCode.trim()) {
       setPromoMessage('Please enter a promo code');
       return;
@@ -283,20 +295,31 @@ export default function Checkout() {
         setAppliedPromo(response.data);
         setPromoDiscount(response.data.discountAmount);
         setPromoMessage(response.data.message);
-        toast({
-          title: 'Promo Applied!',
-          description: response.data.message,
-        });
+        sessionStorage.setItem('appliedPromoCode', promoCode.toUpperCase());
+        sessionStorage.setItem('appliedPromoData', JSON.stringify(response.data));
+        sessionStorage.setItem('appliedPromoDiscount', response.data.discountAmount.toString());
+        if (!silent) {
+          toast({
+            title: 'Promo Applied!',
+            description: response.data.message,
+          });
+        }
       } else {
         setPromoMessage(response.data.message);
         setAppliedPromo(null);
         setPromoDiscount(0);
+        sessionStorage.removeItem('appliedPromoCode');
+        sessionStorage.removeItem('appliedPromoData');
+        sessionStorage.removeItem('appliedPromoDiscount');
       }
     } catch (error: any) {
       console.error('Error applying promo:', error);
       setPromoMessage(error.response?.data?.message || 'Invalid promo code');
       setAppliedPromo(null);
       setPromoDiscount(0);
+      sessionStorage.removeItem('appliedPromoCode');
+      sessionStorage.removeItem('appliedPromoData');
+      sessionStorage.removeItem('appliedPromoDiscount');
     } finally {
       setApplyingPromo(false);
     }
@@ -307,6 +330,9 @@ export default function Checkout() {
     setAppliedPromo(null);
     setPromoDiscount(0);
     setPromoMessage('');
+    sessionStorage.removeItem('appliedPromoCode');
+    sessionStorage.removeItem('appliedPromoData');
+    sessionStorage.removeItem('appliedPromoDiscount');
   };
 
   const handlePlaceOrder = async () => {
@@ -384,29 +410,34 @@ export default function Checkout() {
       }
 
       // Create order
+      // Prepare product quantities for backend
+      const productQuantities: { [key: number]: number } = {};
+      cartItems.forEach(item => {
+        productQuantities[item.product.productId] = item.quantity;
+      });
+
       const orderRes = await apiClient.post('/checkout/create-order', {
         userId: user?.userId,
         shippingMethodId: parseInt(selectedMethod),
         shippingAddressId: parseInt(addressId),
+        promoCode: promoCode ? promoCode.toUpperCase() : undefined,
+        productQuantities,
       });
 
       // Clear cart after successful order
       setCartItems([]);
-      // Also clear from global cart store
       clearCart();
+      handleRemovePromo();
       try {
         await apiClient.post(`/cart/clear/${user?.userId}`);
       } catch (error) {
         console.error('Error clearing cart from backend:', error);
       }
-      
       toast({
         title: '🎉 Order Placed Successfully!',
         description: `Order ${orderRes.data.orderNumber} has been placed. Check your email (${user?.email}) for confirmation and invoice.`,
         duration: 6000,
       });
-
-      // Navigate to order confirmation or orders page
       setTimeout(() => { if (typeof navigate !== 'undefined') navigate('/orders'); else window.location.href = '/orders'; }, 2000);
     } catch (error: any) {
       console.error('Failed to place order:', error);

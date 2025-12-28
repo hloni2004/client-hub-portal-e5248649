@@ -290,7 +290,10 @@ export const useCartStore = create<CartState>()(
                 name: si.product?.name,
                 basePrice: si.product?.basePrice,
                 images: si.product?.images || [],
-                primaryImage: si.product?.primaryImage ? { imageData: si.product.primaryImage.imageData } : undefined,
+                productImages: si.product?.productImages || [],
+                primaryImage: si.product?.primaryImage || undefined,
+                brand: si.product?.brand,
+                // ...add any other fields needed for display
               } as any,
               variantId: 0,
               colorId: si.colour?.colourId || 0,

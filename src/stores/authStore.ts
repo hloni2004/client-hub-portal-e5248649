@@ -23,19 +23,23 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       login: async (data: LoginDto) => {
-        const response = await apiClient.post('/users/login', data);
-        const resp = response.data as any;
-        const user: User = resp.user;
-        const token: string | null = resp.accessToken ?? null;
-        // Only store non-sensitive user info in memory (not localStorage)
-        set({ user, token, isAuthenticated: true });
-
-        // After login, sync any locally-stored cart items to the server
         try {
-          const { useCartStore } = await import('./ecommerce/cartStore');
-          await useCartStore.getState().syncLocalToServer();
-        } catch (e) {
-          console.error('Error syncing local cart after login', e);
+          const response = await apiClient.post('/users/login', data);
+          const resp = response.data as any;
+          const user: User = resp.user;
+          const token: string | null = resp.accessToken ?? null;
+          set({ user, token, isAuthenticated: true });
+          // After login, sync any locally-stored cart items to the server
+          try {
+            const { useCartStore } = await import('./ecommerce/cartStore');
+            await useCartStore.getState().syncLocalToServer();
+          } catch (e) {
+            console.error('Error syncing local cart after login', e);
+          }
+        } catch (error: any) {
+          // If backend returns error, do not set user state
+          let message = error.response?.data?.message || error.message || 'Login failed';
+          throw new Error(message);
         }
       },
 
