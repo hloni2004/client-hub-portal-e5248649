@@ -40,9 +40,8 @@ export const useAuthStore = create<AuthState>()(
       },
 
       register: async (data: RegisterDto) => {
-        const response = await apiClient.post('/users/register', data);
-        const user: User = response.data;
-        set({ user, token: null, isAuthenticated: true });
+        await apiClient.post('/users/register', data);
+        // Do NOT sign in user after registration
       },
 
       logout: async () => {

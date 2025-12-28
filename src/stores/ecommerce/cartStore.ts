@@ -144,8 +144,22 @@ export const useCartStore = create<CartState>()(
         return { success: true };
       },
 
-      removeItem: (itemId: number) => {
-        const newItems = get().items.filter(item => item.id !== itemId);
+      removeItem: async (itemId: number) => {
+        const { useAuthStore } = await import('@/stores/authStore');
+        const user = useAuthStore.getState().user;
+        const items = get().items;
+        const item = items.find(i => i.id === itemId);
+        if (user && item && item.id) {
+          try {
+            const apiClient = (await import('@/lib/api')).default;
+            // Try to delete from backend (cart item id is used)
+            await apiClient.delete(`/cart-items/delete/${item.id}`);
+          } catch (e) {
+            console.warn('Failed to delete cart item from backend', e);
+          }
+        }
+        // Remove from local state
+        const newItems = items.filter(item => item.id !== itemId);
         const subtotal = newItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
         const itemCount = newItems.reduce((sum, item) => sum + item.quantity, 0);
         set({ items: newItems, subtotal, itemCount });

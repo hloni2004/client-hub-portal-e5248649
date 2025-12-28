@@ -169,7 +169,7 @@ export default function Checkout() {
           productId: si.product?.productId,
           name: si.product?.name,
           basePrice: si.product?.basePrice,
-          primaryImage: si.product?.primaryImage ? { imageData: si.product.primaryImage.imageData } : undefined,
+          imageUrl: si.product?.imageUrl || '',
         },
         colour: {
           colourId: si.colour?.colourId,
@@ -182,7 +182,6 @@ export default function Checkout() {
         quantity: si.quantity,
       } as CartItem));
 
-      // If server cart is empty, redirect to cart page
       if (mapped.length === 0) {
         toast({
           title: 'Cart is empty',
@@ -193,10 +192,7 @@ export default function Checkout() {
         return;
       }
 
-      // Replace local store with server response
       useCartStore.setState({ items: mapped, subtotal: mapped.reduce((s, it) => s + (it.product.basePrice * it.quantity), 0), itemCount: mapped.reduce((s, it) => s + it.quantity, 0) });
-
-      // Set checkout UI state only after authoritative server cart is retrieved
       setCartItems(mapped);
     } catch (e: any) {
       console.error('Error fetching server cart for checkout:', e);
@@ -430,11 +426,9 @@ export default function Checkout() {
     }
   };
 
-  const getProductImageUrl = (imageData?: string) => {
-    if (!imageData) return '/images/logo/logo.png';
-    // Backend now sends full data URL with prefix
-    if (imageData.startsWith('data:')) return imageData;
-    return `data:image/jpeg;base64,${imageData}`;
+  const getProductImageUrl = (imageUrl?: string) => {
+    if (!imageUrl) return '/images/logo/logo.png';
+    return imageUrl;
   };
 
   if (loading) {
@@ -664,7 +658,7 @@ export default function Checkout() {
                 {cartItems.map((item) => (
                   <div key={item.cartItemId} className="flex gap-3">
                     <img
-                      src={getProductImageUrl(item.product.primaryImage?.imageData)}
+                      src={getProductImageUrl(item.product.imageUrl)}
                       alt={item.product.name}
                       className="w-16 h-16 object-cover rounded"
                     />

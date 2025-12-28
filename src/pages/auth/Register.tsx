@@ -56,8 +56,8 @@ export default function Register() {
     try {
       const { confirmPassword, ...registerData } = data;
       await register(registerData);
-      toast.success('Registration successful!');
-      navigate('/');
+      toast.success('Registration successful! Please log in.');
+      navigate('/auth/login'); // Redirect to login page after registration
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
