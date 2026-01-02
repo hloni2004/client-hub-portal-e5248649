@@ -58,6 +58,14 @@ apiClient.interceptors.response.use(
 
     // Try to refresh token for 401 or 403 responses (only once per request)
     if ((status === 401 || status === 403) && !originalRequest._retry) {
+      // If the failing request is an auth endpoint (login/register/refresh/logout/password flows)
+      // do NOT attempt a refresh. For example: login returning 401 should immediately reject so
+      // the UI can show a validation error and stop any loading state instead of getting queued.
+      const failingUrl = originalRequest.url || originalRequest.originalUrl || '';
+      if (failingUrl.includes('/users/login') || failingUrl.includes('/users/register') || failingUrl.includes('/users/refresh') || failingUrl.includes('/users/logout') || failingUrl.includes('/users/reset') || failingUrl.includes('/users/forgot') || failingUrl.includes('/users/password')) {
+        return Promise.reject(error);
+      }
+
       // Mark request as retried to avoid loops
       originalRequest._retry = true;
 
