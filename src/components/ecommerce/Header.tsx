@@ -19,6 +19,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useCartStore } from '@/stores/ecommerce/cartStore';
+import { CartDrawer } from '@/components/ecommerce/CartDrawer';
 import { useProductStore } from '@/stores/ecommerce/productStore';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'sonner';
@@ -175,6 +176,9 @@ export function Header() {
               </span>
             )}
           </Button>
+
+          {/* Ensure CartDrawer is mounted globally so the cart button works on all pages (Home included) */}
+          <CartDrawer />
         </div>
       </div>
     </header>
