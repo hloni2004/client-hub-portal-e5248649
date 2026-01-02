@@ -67,30 +67,32 @@ apiClient.interceptors.response.use(
           const refreshResponse = await apiClient.post('/users/refresh');
           // Expect backend to return new access token in body
           const newAccess = refreshResponse.data?.accessToken ?? null;
+          const refreshedUser = refreshResponse.data?.user ?? null;
 
           if (newAccess) {
-            // Update in-memory token store
+            // Use setter to update auth store (keeps reactivity and ensures token isn't persisted)
             try {
-              useAuthStore.getState().token = newAccess;
-              useAuthStore.getState().isAuthenticated = true;
+              useAuthStore.getState().setToken(newAccess);
+              if (refreshedUser) useAuthStore.getState().setUser(refreshedUser);
             } catch (e) {
               console.warn('Could not update auth store after refresh', e);
             }
 
             processQueue(null, newAccess);
           } else {
-            // No token returned — fail refresh
+            // No token returned — fail refresh and clear client state
             processQueue(new Error('No access token returned from refresh'), null);
-            // Redirect to login if not already there
+            try { useAuthStore.getState().clearAuth('refresh_failed'); } catch (e) {}
             if (!window.location.pathname.includes('/auth/login')) {
-              window.location.href = '/auth/login';
+              window.location.href = '/auth/login?sessionExpired=1';
             }
             return Promise.reject(error);
           }
         } catch (refreshErr) {
           processQueue(refreshErr, null);
+          try { useAuthStore.getState().clearAuth('refresh_failed'); } catch (e) {}
           if (!window.location.pathname.includes('/auth/login')) {
-            window.location.href = '/auth/login';
+            window.location.href = '/auth/login?sessionExpired=1';
           }
           return Promise.reject(refreshErr);
         } finally {
@@ -103,6 +105,7 @@ apiClient.interceptors.response.use(
         failedQueue.push({
           resolve: (token: string) => {
             // Update header and retry
+            originalRequest.headers = originalRequest.headers || {};
             originalRequest.headers['Authorization'] = `Bearer ${token}`;
             resolve(apiClient(originalRequest));
           },
