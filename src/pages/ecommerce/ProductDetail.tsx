@@ -42,12 +42,20 @@ export default function ProductDetail() {
     }
   }, [location]);
 
+  // Reset state when product ID changes
+  useEffect(() => {
+    setSelectedColor(null);
+    setSelectedSize(null);
+    setQuantity(1);
+    setCurrentImageIndex(0);
+  }, [id]);
+
   // Set default color when product loads
   useEffect(() => {
-    if (currentProduct?.colours && currentProduct.colours.length > 0 && !selectedColor) {
+    if (currentProduct?.colours && currentProduct.colours.length > 0) {
       setSelectedColor(currentProduct.colours[0]);
     }
-  }, [currentProduct]);
+  }, [currentProduct?.id]);
 
   // Get available sizes for selected color
   const availableSizes = selectedColor?.sizes || [];

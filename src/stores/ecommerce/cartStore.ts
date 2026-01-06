@@ -83,6 +83,44 @@ export const useCartStore = create<CartState>()(
                 message: response.data.message 
               };
             }
+
+            // Fetch the updated cart from server to get real cart item IDs
+            try {
+              const cartResponse = await apiClient.get(`/carts/user/${user.userId}`);
+              const cartPayload = cartResponse.data;
+              if (cartPayload && cartPayload.success && cartPayload.data) {
+                const serverCart = cartPayload.data;
+                const serverItems = serverCart.items || [];
+
+                const mapped: CartItem[] = serverItems.map((si: any) => ({
+                  id: si.cartItemId,
+                  productId: si.product?.productId,
+                  product: {
+                    id: si.product?.productId,
+                    name: si.product?.name,
+                    basePrice: si.product?.basePrice,
+                    salePrice: si.product?.salePrice,
+                    images: si.product?.images || [],
+                    productImages: si.product?.productImages || [],
+                    primaryImage: si.product?.primaryImage || undefined,
+                    brand: si.product?.brand,
+                  } as any,
+                  variantId: 0,
+                  colorId: si.colour?.colourId || 0,
+                  sizeId: si.size?.sizeId || 0,
+                  quantity: si.quantity,
+                  unitPrice: si.product?.salePrice || si.product?.basePrice || 0,
+                }));
+
+                const subtotal = mapped.reduce((sum, it) => sum + it.unitPrice * it.quantity, 0);
+                const itemCount = mapped.reduce((sum, it) => sum + it.quantity, 0);
+
+                set({ items: mapped, subtotal, itemCount, isOpen: true });
+                return { success: true };
+              }
+            } catch (fetchError) {
+              console.warn('Could not fetch cart after add, using local state', fetchError);
+            }
           }
         } catch (error: any) {
           console.error('Error saving to cart:', error);
@@ -107,7 +145,7 @@ export const useCartStore = create<CartState>()(
           }
         }
 
-        // Update local state
+        // Update local state (only for non-logged-in users or if fetch failed)
         const items = get().items;
         const existingIndex = items.findIndex(
           item => item.productId === product.id && item.colorId === colorId && item.sizeId === sizeId

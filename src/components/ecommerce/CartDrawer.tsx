@@ -35,8 +35,8 @@ export function CartDrawer() {
         ) : (
           <>
             <div className="flex-1 overflow-y-auto py-6 space-y-6">
-              {items.map(item => (
-                <div key={item.id} className="flex gap-4">
+              {items.map((item, index) => (
+                <div key={item.id ?? `cart-item-${item.productId}-${item.colourId}-${item.sizeId}-${index}`} className="flex gap-4">
                   <Link to={`/product/${item.productId}`} onClick={closeCart} className="w-24 h-32 flex-shrink-0 overflow-hidden bg-muted rounded">
                     <img
                       src={
