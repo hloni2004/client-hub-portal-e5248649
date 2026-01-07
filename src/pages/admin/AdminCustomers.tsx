@@ -23,7 +23,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import apiClient from '@/lib/api';
-import { Loader2, Search, ShoppingBag, User, Mail, Phone, MapPin, ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
+import { Loader2, Search, ShoppingBag, User, Mail, Phone, MapPin, ArrowLeft, Edit } from 'lucide-react';
 
 interface Customer {
   userId: number;
@@ -55,6 +56,8 @@ export default function AdminCustomers() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerOrders, setCustomerOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ firstName: '', lastName: '', email: '', phoneNumber: '', username: '' });
 
   useEffect(() => {
     if (!user || user.roleName !== 'ADMIN') {
@@ -125,6 +128,44 @@ export default function AdminCustomers() {
   const handleViewCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
     loadCustomerOrders(customer.userId);
+  };
+
+  const openEditDialog = (customer: Customer) => {
+    setEditForm({
+      firstName: customer.firstName || '',
+      lastName: customer.lastName || '',
+      email: customer.email || '',
+      phoneNumber: customer.phoneNumber || '',
+      username: customer.username || '',
+    });
+    setSelectedCustomer(customer);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditChange = (field: string, value: string) => {
+    setEditForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleEditSubmit = async () => {
+    if (!selectedCustomer) return;
+    try {
+      const payload = {
+        userId: selectedCustomer.userId,
+        firstName: editForm.firstName,
+        lastName: editForm.lastName,
+        email: editForm.email,
+        phoneNumber: editForm.phoneNumber,
+        username: editForm.username,
+      };
+      await apiClient.put('/users/update', payload);
+      toast.success('Customer updated');
+      setEditDialogOpen(false);
+      setSelectedCustomer(null);
+      loadCustomers();
+    } catch (err) {
+      console.error('Failed to update customer', err);
+      toast.error('Failed to update customer');
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -226,17 +267,18 @@ export default function AdminCustomers() {
                       <TableCell>{customer.username}</TableCell>
                       <TableCell>{formatDate(customer.createdAt)}</TableCell>
                       <TableCell>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewCustomer(customer)}
-                            >
-                              View Details
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                        <div className="flex items-center gap-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewCustomer(customer)}
+                              >
+                                View Details
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                             <DialogHeader>
                               <DialogTitle>Customer Profile</DialogTitle>
                               <DialogDescription>
@@ -336,6 +378,53 @@ export default function AdminCustomers() {
                                 </Card>
                               </div>
                             )}
+                        </DialogContent>
+                          </Dialog>
+
+                          <Button variant="ghost" size="sm" onClick={() => openEditDialog(customer)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </Button>
+                        </div>
+
+                        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+                          <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                              <DialogTitle>Edit Customer</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 py-2">
+                              <div className="grid grid-cols-2 gap-4">
+                                <Input
+                                  placeholder="First name"
+                                  value={editForm.firstName}
+                                  onChange={(e) => handleEditChange('firstName', e.target.value)}
+                                />
+                                <Input
+                                  placeholder="Last name"
+                                  value={editForm.lastName}
+                                  onChange={(e) => handleEditChange('lastName', e.target.value)}
+                                />
+                              </div>
+                              <Input
+                                placeholder="Email"
+                                value={editForm.email}
+                                onChange={(e) => handleEditChange('email', e.target.value)}
+                              />
+                              <Input
+                                placeholder="Phone number"
+                                value={editForm.phoneNumber}
+                                onChange={(e) => handleEditChange('phoneNumber', e.target.value)}
+                              />
+                              <Input
+                                placeholder="Username"
+                                value={editForm.username}
+                                onChange={(e) => handleEditChange('username', e.target.value)}
+                              />
+                              <div className="flex justify-end gap-2">
+                                <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+                                <Button onClick={handleEditSubmit}>Save</Button>
+                              </div>
+                            </div>
                           </DialogContent>
                         </Dialog>
                       </TableCell>

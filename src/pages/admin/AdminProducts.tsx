@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit, Trash2, Eye } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -38,6 +38,7 @@ interface Product {
     name: string;
   };
   isActive: boolean;
+  deletedAt?: string; // Soft delete timestamp
   images?: Array<{
     imageId: number;
     isPrimary: boolean;
@@ -53,6 +54,7 @@ export default function AdminProducts() {
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<number | null>(null);
+  const [showDeleted, setShowDeleted] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -60,6 +62,7 @@ export default function AdminProducts() {
 
   const fetchProducts = async () => {
     try {
+      // Get non-deleted products by default
       const response = await apiClient.get('/products/getAll');
       setProducts(response.data.data || response.data);
     } catch (error) {
@@ -70,17 +73,46 @@ export default function AdminProducts() {
     }
   };
 
+  const fetchAllIncludingDeleted = async () => {
+    try {
+      const response = await apiClient.get('/products/all');
+      setProducts(response.data.data || response.data);
+    } catch (error) {
+      toast.error('Failed to load products');
+      console.error(error);
+    }
+  };
+
   const handleDelete = async () => {
     if (!productToDelete) return;
 
     try {
       await apiClient.delete(`/products/delete/${productToDelete}`);
       toast.success('Product deleted successfully');
-      fetchProducts();
+      if (showDeleted) {
+        fetchAllIncludingDeleted();
+      } else {
+        fetchProducts();
+      }
       setDeleteDialogOpen(false);
       setProductToDelete(null);
     } catch (error) {
       toast.error('Failed to delete product');
+      console.error(error);
+    }
+  };
+
+  const handleRestore = async (productId: number) => {
+    try {
+      await apiClient.post(`/products/restore/${productId}`);
+      toast.success('Product restored');
+      if (showDeleted) {
+        fetchAllIncludingDeleted();
+      } else {
+        fetchProducts();
+      }
+    } catch (error) {
+      toast.error('Failed to restore product');
       console.error(error);
     }
   };
@@ -119,10 +151,27 @@ export default function AdminProducts() {
               <CardTitle className="text-2xl">Products</CardTitle>
               <CardDescription>Manage your product inventory</CardDescription>
             </div>
-            <Button onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/products/add') : window.location.href = '/admin/products/add')}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Product
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (showDeleted) {
+                    fetchProducts();
+                    setShowDeleted(false);
+                  } else {
+                    fetchAllIncludingDeleted();
+                    setShowDeleted(true);
+                  }
+                }}
+              >
+                {showDeleted ? 'Hide deleted' : 'Show deleted'}
+              </Button>
+              <Button onClick={() => (typeof navigate !== 'undefined' ? navigate('/admin/products/add') : window.location.href = '/admin/products/add')}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Product
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -139,7 +188,9 @@ export default function AdminProducts() {
           </div>
 
           {loading ? (
-            <div className="text-center py-8">Loading products...</div>
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
           ) : (
             <div className="rounded-md border">
               <Table>
@@ -194,6 +245,9 @@ export default function AdminProducts() {
                           <Badge variant={product.isActive ? 'default' : 'secondary'}>
                             {product.isActive ? 'Active' : 'Inactive'}
                           </Badge>
+                          {product.deletedAt && (
+                            <div className="text-xs text-destructive mt-1">Deleted</div>
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
@@ -204,21 +258,30 @@ export default function AdminProducts() {
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => (typeof navigate !== 'undefined' ? navigate(`/admin/products/edit/${product.productId}`) : window.location.href = `/admin/products/edit/${product.productId}`)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openDeleteDialog(product.productId)}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {!product.deletedAt && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => (typeof navigate !== 'undefined' ? navigate(`/admin/products/edit/${product.productId}`) : window.location.href = `/admin/products/edit/${product.productId}`)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {!product.deletedAt && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openDeleteDialog(product.productId)}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {product.deletedAt && (
+                              <Button variant="ghost" size="icon" onClick={() => handleRestore(product.productId)}>
+                                <Eye className="h-4 w-4 text-success" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

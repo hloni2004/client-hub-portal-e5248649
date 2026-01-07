@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ShoppingBag, Search, Menu, X, Star, SlidersHorizontal, Grid3X3, List } from 'lucide-react';
+import { ShoppingBag, Search, Menu, X, Star, SlidersHorizontal, Grid3X3, List, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
@@ -39,6 +39,20 @@ export default function Shop() {
     return '';
   };
 
+  // Get second image for hover effect
+  const getSecondProductImageUrl = (product: any) => {
+    // Check if product has blob-based images
+    if (product.productImages && product.productImages.length > 1) {
+      const secondImage = product.productImages[1];
+      return secondImage.supabaseUrl || secondImage.imageUrl || '';
+    }
+    // Fallback to legacy images array
+    if (product.images && product.images.length > 1) {
+      return product.images[1];
+    }
+    return '';
+  };
+
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
@@ -73,7 +87,7 @@ export default function Shop() {
 
   // Filter and sort products
   let filteredProducts = products.filter(product => {
-    const price = product.salePrice || product.basePrice;
+    const price = product.basePrice; // basePrice is the actual selling price
     const matchesPrice = price >= priceRange[0] && price <= priceRange[1];
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -85,9 +99,9 @@ export default function Shop() {
   filteredProducts = [...filteredProducts].sort((a, b) => {
     switch (sortBy) {
       case 'price-asc':
-        return (a.salePrice || a.basePrice) - (b.salePrice || b.basePrice);
+        return a.basePrice - b.basePrice;
       case 'price-desc':
-        return (b.salePrice || b.basePrice) - (a.salePrice || a.basePrice);
+        return b.basePrice - a.basePrice;
       case 'rating':
         return b.rating - a.rating;
       default:
@@ -114,7 +128,8 @@ export default function Shop() {
                 className="border-muted-foreground/50"
               />
               <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-                {category.name} ({category.productCount})
+                {(category.name || '').replace(/[{}]/g, '')}
+                {typeof category.productCount === 'number' ? ` (${category.productCount})` : null}
               </span>
             </label>
           ))}
@@ -251,15 +266,8 @@ export default function Shop() {
 
             {/* Products Grid */}
             {loading ? (
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="animate-pulse">
-                    <div className="aspect-[3/4] bg-muted mb-4" />
-                    <div className="h-4 bg-muted w-1/3 mb-2" />
-                    <div className="h-5 bg-muted w-2/3 mb-2" />
-                    <div className="h-4 bg-muted w-1/4" />
-                  </div>
-                ))}
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin" />
               </div>
             ) : filteredProducts.length === 0 ? (
               <div className="text-center py-24">
@@ -281,15 +289,25 @@ export default function Shop() {
                     style={{ animationDelay: `${index * 0.05}s` }}
                   >
                     <Link to={`/product/${product.id}`} className="block">
-                      <div className="relative aspect-[3/4] overflow-hidden bg-muted mb-4">
+                      <div className="product-card relative aspect-[3/4] mb-4 overflow-hidden bg-muted group">
                         <img
                           src={getProductImageUrl(product)}
                           alt={product.name}
-                          className="product-image w-full h-full object-cover"
+                          className="product-image product-image-front w-full h-full object-cover transition-opacity duration-[1500ms] ease-in-out"
                           onError={(e) => {
                             e.currentTarget.src = 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800';
                           }}
                         />
+                        {getSecondProductImageUrl(product) && (
+                          <img
+                            src={getSecondProductImageUrl(product)}
+                            alt={`${product.name} alternate view`}
+                            className="product-image product-image-back absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-[1500ms] ease-in-out"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        )}
                         <div className="image-overlay" />
                         {product.isNew && (
                           <span className="absolute top-3 left-3 px-2 py-1 bg-success text-success-foreground text-[10px] tracking-wider uppercase">
@@ -331,10 +349,10 @@ export default function Shop() {
                         ))}
                       </div>
                       <div className="price-luxury text-sm">
-                        {product.salePrice ? (
+                        {product.comparePrice && product.comparePrice > product.basePrice ? (
                           <div className="flex items-center justify-center gap-2">
-                            <span className="price-sale">{formatPrice(product.basePrice)}</span>
-                            <span className="text-sale font-medium">{formatPrice(product.salePrice)}</span>
+                            <span className="price-sale">{formatPrice(product.comparePrice)}</span>
+                            <span className="text-sale font-medium">{formatPrice(product.basePrice)}</span>
                           </div>
                         ) : (
                           <span>{formatPrice(product.basePrice)}</span>
@@ -368,10 +386,10 @@ export default function Shop() {
                       <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{product.description}</p>
                       <div className="flex items-center gap-4">
                         <div className="price-luxury">
-                          {product.salePrice ? (
+                          {product.comparePrice && product.comparePrice > product.basePrice ? (
                             <div className="flex items-center gap-2">
-                              <span className="price-sale text-sm">{formatPrice(product.basePrice)}</span>
-                              <span className="text-sale font-medium">{formatPrice(product.salePrice)}</span>
+                              <span className="price-sale text-sm">{formatPrice(product.comparePrice)}</span>
+                              <span className="text-sale font-medium">{formatPrice(product.basePrice)}</span>
                             </div>
                           ) : (
                             <span>{formatPrice(product.basePrice)}</span>

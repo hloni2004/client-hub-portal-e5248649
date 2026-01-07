@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import apiClient from '@/lib/api';
-import { Lock, CheckCircle, XCircle } from 'lucide-react';
+import { Lock, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
 const resetPasswordSchema = z.object({
   password: z.string()
@@ -193,6 +193,11 @@ export default function ResetPassword() {
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
             <div className="flex justify-center mb-4">
+              <img 
+                src="/images/logo/symbol.png" 
+                alt="Logo" 
+                className="h-12 w-auto mb-4"
+              />
               <div className="rounded-full bg-red-100 p-3">
                 <XCircle className="h-8 w-8 text-red-600" />
               </div>
@@ -258,8 +263,15 @@ export default function ResetPassword() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-subtle p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Reset Your Password</CardTitle>
-          <CardDescription>
+          <div className="flex justify-center mb-4">
+            <img 
+              src="/images/logo/symbol.png" 
+              alt="Logo" 
+              className="h-40 w-auto"
+            />
+          </div>
+          <CardTitle className="text-2xl font-bold text-center">Reset Your Password</CardTitle>
+          <CardDescription className="text-center">
             {!otpVerified ? 'Enter the verification code sent to your email' : 'Create a new password for your account'}
           </CardDescription>
         </CardHeader>
@@ -380,6 +392,7 @@ export default function ResetPassword() {
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isLoading ? 'Resetting password...' : 'Reset Password'}
             </Button>
             <p className="text-sm text-center text-muted-foreground">

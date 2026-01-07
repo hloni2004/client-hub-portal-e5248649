@@ -79,8 +79,19 @@ export function Header() {
 
         {/* Center: Logo */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-          <Link to="/" className="font-display text-xl md:text-2xl tracking-[0.2em] whitespace-nowrap">
-            MAISON LUXE
+          <Link to="/" className="flex items-center">
+            <img 
+              src="/images/logo/logo.png" 
+              alt="MAISON LUXE" 
+              className="h-8 md:h-10 w-auto"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+            <span className="hidden font-display text-xl md:text-2xl tracking-[0.2em] whitespace-nowrap">
+              MAISON LUXE
+            </span>
           </Link>
         </div>
 

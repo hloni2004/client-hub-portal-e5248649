@@ -204,7 +204,9 @@ export default function Checkout() {
         return;
       }
 
-      useCartStore.setState({ items: mapped, subtotal: mapped.reduce((s, it) => s + (it.product.basePrice * it.quantity), 0), itemCount: mapped.reduce((s, it) => s + it.quantity, 0) });
+      // Calculate subtotal using basePrice as actual selling price
+      const subtotal = mapped.reduce((s, it) => s + (it.product.basePrice * it.quantity), 0);
+      useCartStore.setState({ items: mapped, subtotal, itemCount: mapped.reduce((s, it) => s + it.quantity, 0) });
       setCartItems(mapped);
     } catch (e: any) {
       console.error('Error fetching server cart for checkout:', e);
@@ -251,6 +253,7 @@ export default function Checkout() {
   };
 
   const calculateSubtotal = () => {
+    // Calculate subtotal using basePrice as actual selling price
     return cartItems.reduce((sum, item) => sum + (item.quantity * item.product.basePrice), 0);
   };
 
@@ -391,6 +394,7 @@ export default function Checkout() {
         }
 
         // Compare subtotal to detect price/quantity changes
+        // Calculate subtotal using basePrice as actual selling price
         const latestSubtotal = latestItems.reduce((s: number, it: any) => s + (it.quantity * it.product.basePrice), 0);
         if (Math.abs(latestSubtotal - calculateSubtotal()) > 0.5) {
           toast({
@@ -458,8 +462,8 @@ export default function Checkout() {
   };
 
   const getProductImageUrl = (imageUrl?: string) => {
-    if (!imageUrl) return '/images/logo/logo.png';
-    return imageUrl;
+    // Return actual product image or fallback to logo
+    return imageUrl || '/images/logo/logo.png';
   };
 
   if (loading) {
@@ -793,8 +797,8 @@ export default function Checkout() {
               >
                 {submitting ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {loading ? 'Processing...' : 'Place Order'}
                   </>
                 ) : (
                   'Place Order'

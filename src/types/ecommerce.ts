@@ -55,6 +55,7 @@ export interface Product {
   name: string;
   description: string;
   basePrice: number;
+  comparePrice?: number;
   salePrice?: number;
   sku: string;
   categoryId: number;

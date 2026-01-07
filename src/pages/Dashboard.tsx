@@ -10,7 +10,7 @@ import { useProjectStore } from '@/stores/projectStore';
 import { useTaskStore } from '@/stores/taskStore';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useDeliverableStore } from '@/stores/deliverableStore';
-import { FolderKanban, CheckSquare, FileUp, Bell, ArrowRight, UserPlus, Users, AlertCircle, Clock, TrendingUp } from 'lucide-react';
+import { FolderKanban, CheckSquare, FileUp, Bell, ArrowRight, UserPlus, Users, AlertCircle, Clock, TrendingUp, Loader2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ProjectStatus, TaskStatus, UserRole } from '@/types';
@@ -330,7 +330,9 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="card-spacing tight-spacing">
               {loading ? (
-                <p className="text-sm text-muted-foreground">Loading...</p>
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
               ) : filteredProjects.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No projects yet</p>
               ) : (
@@ -378,7 +380,9 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="card-spacing tight-spacing">
               {loading ? (
-                <p className="text-sm text-muted-foreground">Loading...</p>
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
               ) : tasks.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No tasks yet</p>
               ) : (

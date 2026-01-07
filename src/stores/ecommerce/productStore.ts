@@ -166,15 +166,11 @@ export const useProductStore = create<ProductState>((set, get) => ({
       const response = await apiClient.get('/categories/getAll');
       const categoriesData = response.data?.data || response.data;
       
-      console.log('Categories API response:', categoriesData);
-      console.log('Is array?', Array.isArray(categoriesData));
-      
       // Map backend categories to frontend Category interface
       // Include ALL categories, not just active ones
       const mappedCategories = Array.isArray(categoriesData) 
         ? categoriesData
             .map((cat: any) => {
-              console.log(`Category ${cat.name}: isActive = ${cat.isActive}, imageUrl = ${cat.imageUrl}`);
               // Handle both blob images and URL strings
               let imageUrl = cat.imageUrl;
               
@@ -196,9 +192,6 @@ export const useProductStore = create<ProductState>((set, get) => ({
               index === self.findIndex((c) => c.id === category.id)
             )
         : [];
-      
-      console.log('Mapped categories:', mappedCategories);
-      console.log('Number of categories:', mappedCategories.length);
       
       set({ categories: mappedCategories, categoriesLoading: false });
     } catch (error) {

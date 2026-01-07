@@ -7,6 +7,7 @@ import { ArrowLeft, Plus, X, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Loader2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -105,7 +106,7 @@ export default function EditProduct() {
       setValue('sku', product.sku);
       setValue('weight', product.weight);
       setValue('categoryId', product.category?.categoryId);
-      setValue('isActive', product.isActive);
+      setValue('isActive', product.isActive, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
 
       // Set images
       if (product.images && product.images.length > 0) {
@@ -231,8 +232,6 @@ export default function EditProduct() {
           })),
         })),
       };
-
-      console.log('Updating product...');
       await apiClient.put('/products/update', productData);
 
       // Upload new images to Supabase if any
@@ -242,13 +241,11 @@ export default function EditProduct() {
           formData.append('files', img.file);
         });
 
-        console.log('Uploading', newImages.length, 'new images to Supabase...');
         await apiClient.post(`/product-images/upload/${id}`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
-        console.log('Images uploaded successfully');
       }
 
       toast.success('Product updated successfully!');
@@ -390,8 +387,10 @@ export default function EditProduct() {
               <div className="flex items-center space-x-2">
                 <Switch
                   id="isActive"
-                  checked={watch('isActive') ?? true}
-                  onCheckedChange={(checked) => setValue('isActive', checked)}
+                  checked={watch('isActive') === true}
+                  onCheckedChange={(checked) => {
+                    setValue('isActive', checked, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+                  }}
                 />
                 <Label htmlFor="isActive" className="font-normal">Active</Label>
               </div>
@@ -551,6 +550,7 @@ export default function EditProduct() {
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {loading ? 'Updating...' : 'Update Product'}
               </Button>
             </div>

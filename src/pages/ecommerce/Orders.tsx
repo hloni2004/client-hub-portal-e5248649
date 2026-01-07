@@ -14,7 +14,11 @@ interface OrderItem {
   product: {
     productId: number;
     name: string;
-    primaryImage?: { imageData: string };
+    primaryImage?: { 
+      imageData?: string;
+      imageUrl?: string;
+      supabaseUrl?: string;
+    };
   };
   colour: {
     colourId: number;
@@ -160,11 +164,19 @@ export default function Orders() {
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
-  const getProductImageUrl = (imageData?: string) => {
-    if (!imageData) return '/images/logo/logo.png';
-    // Backend now sends full data URL with prefix
-    if (imageData.startsWith('data:')) return imageData;
-    return `data:image/jpeg;base64,${imageData}`;
+  const getProductImageUrl = (product: { primaryImage?: { imageData?: string; imageUrl?: string } }) => {
+    // Try imageUrl first (Supabase URL)
+    if (product.primaryImage?.imageUrl) {
+      return product.primaryImage.imageUrl;
+    }
+    // Try base64 imageData
+    if (product.primaryImage?.imageData) {
+      const imageData = product.primaryImage.imageData;
+      if (imageData.startsWith('data:')) return imageData;
+      return `data:image/jpeg;base64,${imageData}`;
+    }
+    // Fallback to logo
+    return '/images/logo/logo.png';
   };
 
   const formatDate = (dateString: string) => {
@@ -234,7 +246,7 @@ export default function Orders() {
                 {order.items.map((item) => (
                   <div key={item.orderItemId} className="flex gap-4 pb-3 border-b last:border-0">
                     <img
-                      src={getProductImageUrl(item.product.primaryImage?.imageData)}
+                      src={getProductImageUrl(item.product)}
                       alt={item.product.name}
                       className="w-20 h-20 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
                       onClick={() => (typeof navigate !== 'undefined' ? navigate(`/product/${item.product.productId}`) : window.location.href = `/product/${item.product.productId}`)}

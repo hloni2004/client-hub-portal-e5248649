@@ -65,6 +65,17 @@ export default function Home() {
     }).format(price);
   };
 
+  // Get second image for hover effect
+  const getSecondImageUrl = (product: any) => {
+    if (product.productImages && product.productImages.length > 1) {
+      return product.productImages[1].supabaseUrl || product.productImages[1].imageUrl || '';
+    }
+    if (product.images && product.images.length > 1) {
+      return product.images[1];
+    }
+    return '';
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -183,12 +194,22 @@ export default function Home() {
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <Link to={`/product/${product.id}`} className="block">
-                  <div className="relative aspect-[3/4] overflow-hidden bg-muted mb-6">
+                  <div className="relative aspect-[3/4] overflow-hidden bg-muted mb-6 group">
                     <img
                       src={product.images[0]}
                       alt={product.name}
-                      className="product-image w-full h-full object-cover"
+                      className="product-image product-image-front w-full h-full object-cover transition-opacity duration-[1500ms] ease-in-out"
                     />
+                    {getSecondImageUrl(product) && (
+                      <img
+                        src={getSecondImageUrl(product)}
+                        alt={`${product.name} alternate view`}
+                        className="product-image product-image-back absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-[1500ms] ease-in-out"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    )}
                     <div className="image-overlay" />
                     {product.isNew && (
                       <span className="absolute top-4 left-4 px-3 py-1 bg-success text-success-foreground text-xs tracking-wider uppercase">
@@ -230,10 +251,10 @@ export default function Home() {
                     <span className="text-xs text-muted-foreground ml-2">({product.reviewCount})</span>
                   </div>
                   <div className="price-luxury">
-                    {product.salePrice ? (
+                    {product.comparePrice && product.comparePrice > product.basePrice ? (
                       <div className="flex items-center justify-center gap-3">
-                        <span className="price-sale text-sm">{formatPrice(product.basePrice)}</span>
-                        <span className="text-sale font-medium">{formatPrice(product.salePrice)}</span>
+                        <span className="price-sale text-sm">{formatPrice(product.comparePrice)}</span>
+                        <span className="text-sale font-medium">{formatPrice(product.basePrice)}</span>
                       </div>
                     ) : (
                       <span>{formatPrice(product.basePrice)}</span>
@@ -272,7 +293,7 @@ export default function Home() {
             <div>
               <h3 className="font-display text-2xl tracking-widest mb-6">MAISON LUXE</h3>
               <p className="text-background/60 text-sm leading-relaxed">
-                Curating the finest luxury fashion since 1987. Where timeless elegance meets contemporary design.
+                Curating the finest luxury fashion since 2025. Where timeless elegance meets contemporary design.
               </p>
             </div>
             <div>

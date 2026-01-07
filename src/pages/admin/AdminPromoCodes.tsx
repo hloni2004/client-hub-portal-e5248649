@@ -55,6 +55,7 @@ interface PromoCode {
   currentUsage: number;
   minPurchaseAmount: number | null;
   isActive: boolean;
+  perUserUsageLimit: number | null;
   description: string;
   createdAt: string;
 }
@@ -93,6 +94,7 @@ export default function AdminPromoCodes() {
     usageLimit: null as number | null,
     minPurchaseAmount: null as number | null,
     isActive: true,
+    perUserUsageLimit: null as number | null,
     description: '',
     productIds: [] as number[],
   });
@@ -143,6 +145,7 @@ export default function AdminPromoCodes() {
         usageLimit: promo.usageLimit,
         minPurchaseAmount: promo.minPurchaseAmount,
         isActive: promo.isActive,
+        perUserUsageLimit: promo.perUserUsageLimit,
         description: promo.description || '',
         productIds: promoData.eligibleProductIds,
       });
@@ -157,6 +160,7 @@ export default function AdminPromoCodes() {
         usageLimit: null,
         minPurchaseAmount: null,
         isActive: true,
+        perUserUsageLimit: null,
         description: '',
         productIds: [],
       });
@@ -176,6 +180,7 @@ export default function AdminPromoCodes() {
       usageLimit: null,
       minPurchaseAmount: null,
       isActive: true,
+      perUserUsageLimit: null,
       description: '',
       productIds: [],
     });
@@ -506,7 +511,7 @@ export default function AdminPromoCodes() {
 
                 {/* Usage Limit */}
                 <div className="space-y-2">
-                  <Label htmlFor="usageLimit">Usage Limit</Label>
+                  <Label htmlFor="usageLimit">Total Usage Limit</Label>
                   <Input
                     id="usageLimit"
                     type="number"
@@ -515,6 +520,25 @@ export default function AdminPromoCodes() {
                     value={formData.usageLimit || ''}
                     onChange={(e) => setFormData({ ...formData, usageLimit: e.target.value ? parseInt(e.target.value) : null })}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Maximum total uses across all users
+                  </p>
+                </div>
+
+                {/* Per User Usage Limit */}
+                <div className="space-y-2">
+                  <Label htmlFor="perUserUsageLimit">Per-User Usage Limit</Label>
+                  <Input
+                    id="perUserUsageLimit"
+                    type="number"
+                    min="1"
+                    placeholder="Unlimited per user"
+                    value={formData.perUserUsageLimit || ''}
+                    onChange={(e) => setFormData({ ...formData, perUserUsageLimit: e.target.value ? parseInt(e.target.value) : null })}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Maximum times each user can use this code
+                  </p>
                 </div>
 
                 {/* Description */}

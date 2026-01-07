@@ -219,9 +219,9 @@
     @apply max-w-7xl mx-auto px-6 md:px-8 lg:px-12;
   }
 
-  /* Product card hover */
+  /* product hover timings adjusted to 1500ms with smoother easing */
   .product-card {
-    @apply transition-all duration-500 ease-out;
+    transition: all 1500ms cubic-bezier(0.22,0.61,0.36,1);
   }
 
   .product-card:hover {
@@ -233,12 +233,20 @@
   }
 
   .product-image {
-    @apply transition-transform duration-700 ease-out;
+    transition: transform 1500ms cubic-bezier(0.22,0.61,0.36,1);
   }
 
-  /* Image overlay */
+  /* Ensure opacity transitions for front/back images are slower */
+  .product-image-front,
+  .product-image-back {
+    transition: opacity 1500ms cubic-bezier(0.22,0.61,0.36,1), transform 1500ms cubic-bezier(0.22,0.61,0.36,1);
+  }
+
   .image-overlay {
-    @apply absolute inset-0 bg-foreground/0 transition-all duration-500;
+    position: absolute;
+    inset: 0;
+    background-color: rgba(255,255,255,0);
+    transition: all 1500ms cubic-bezier(0.22,0.61,0.36,1);
   }
 
   .product-card:hover .image-overlay {
@@ -247,11 +255,14 @@
 
   /* Text reveal animation */
   .text-reveal {
-    @apply opacity-0 translate-y-4 transition-all duration-500;
+    opacity: 0;
+    transform: translateY(1rem);
+    transition: all 1500ms cubic-bezier(0.22,0.61,0.36,1);
   }
 
   .product-card:hover .text-reveal {
-    @apply opacity-100 translate-y-0;
+    opacity: 1;
+    transform: translateY(0);
   }
 
   /* Elegant border */
@@ -299,5 +310,38 @@
 
   .price-sale {
     @apply text-sale line-through opacity-60;
+  }
+
+  /* Product Image Hover Effect - Desktop & Mobile */
+  .product-card {
+    position: relative;
+  }
+
+  .product-image-back {
+    z-index: 1;
+  }
+
+  .product-image-front {
+    z-index: 2;
+  }
+
+  /* Desktop: Hover to reveal second image */
+  @media (hover: hover) and (pointer: fine) {
+    .product-card:hover .product-image-front {
+      opacity: 0;
+    }
+    .product-card:hover .product-image-back {
+      opacity: 1;
+    }
+  }
+
+  /* Mobile: Tap/touch to toggle second image */
+  @media (hover: none) and (pointer: coarse) {
+    .product-card:active .product-image-front {
+      opacity: 0;
+    }
+    .product-card:active .product-image-back {
+      opacity: 1;
+    }
   }
 }

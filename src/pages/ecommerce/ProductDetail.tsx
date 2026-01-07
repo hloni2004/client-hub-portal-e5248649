@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
-import { Star, Minus, Plus, Heart, Share2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Star, Minus, Plus, Heart, Share2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useProductStore } from '@/stores/ecommerce/productStore';
@@ -172,15 +172,8 @@ export default function ProductDetail() {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="pt-32 container-luxury">
-          <div className="grid lg:grid-cols-2 gap-12">
-            <div className="aspect-[3/4] bg-muted animate-pulse" />
-            <div className="space-y-6">
-              <div className="h-8 bg-muted w-1/3 animate-pulse" />
-              <div className="h-12 bg-muted w-2/3 animate-pulse" />
-              <div className="h-6 bg-muted w-1/4 animate-pulse" />
-            </div>
-          </div>
+        <div className="flex items-center justify-center min-h-[60vh] pt-32">
+          <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       </div>
     );
@@ -276,10 +269,10 @@ export default function ProductDetail() {
                 </span>
               </div>
               <div className="price-luxury text-2xl">
-                {currentProduct.salePrice ? (
+                {currentProduct.comparePrice && currentProduct.comparePrice > currentProduct.basePrice ? (
                   <div className="flex items-center gap-4">
-                    <span className="price-sale">{formatPrice(currentProduct.basePrice)}</span>
-                    <span className="text-sale font-medium">{formatPrice(currentProduct.salePrice)}</span>
+                    <span className="price-sale">{formatPrice(currentProduct.comparePrice)}</span>
+                    <span className="text-sale font-medium">{formatPrice(currentProduct.basePrice)}</span>
                   </div>
                 ) : (
                   <span>{formatPrice(currentProduct.basePrice)}</span>
@@ -457,7 +450,7 @@ export default function ProductDetail() {
                 </div>
                 <p className="text-[10px] text-muted-foreground tracking-wider uppercase mb-1">{product.brand}</p>
                 <h3 className="font-display text-lg mb-1 group-hover:text-primary transition-colors">{product.name}</h3>
-                <p className="text-sm">{formatPrice(product.salePrice || product.basePrice)}</p>
+                <p className="text-sm">{formatPrice(product.basePrice)}</p>
               </Link>
             ))}
           </div>

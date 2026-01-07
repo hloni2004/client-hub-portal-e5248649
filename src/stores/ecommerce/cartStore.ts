@@ -30,10 +30,11 @@ export const useCartStore = create<CartState>()(
       addItem: async (product: Product, quantity: number, colorId?: number, sizeId?: number) => {
         // If colorId or sizeId is not provided, fetch product details to get the first available color/size
         if (!colorId || !sizeId) {
+          let productData: any = null;
           try {
             const apiClient = (await import('@/lib/api')).default;
             const response = await apiClient.get(`/products/read/${product.id}`);
-            const productData = response.data.data || response.data;
+            productData = response.data.data || response.data;
             
             // Get first available colour and size
             if (productData.colours && productData.colours.length > 0) {
@@ -46,6 +47,11 @@ export const useCartStore = create<CartState>()(
             }
           } catch (error) {
             console.error('Error fetching product details:', error);
+          }
+
+          // If we fetched product details, replace local product object to include sizes/colours for stock checks
+          if (productData) {
+            product = productData;
           }
         }
         
@@ -92,25 +98,31 @@ export const useCartStore = create<CartState>()(
                 const serverCart = cartPayload.data;
                 const serverItems = serverCart.items || [];
 
-                const mapped: CartItem[] = serverItems.map((si: any) => ({
-                  id: si.cartItemId,
-                  productId: si.product?.productId,
-                  product: {
-                    id: si.product?.productId,
-                    name: si.product?.name,
-                    basePrice: si.product?.basePrice,
-                    salePrice: si.product?.salePrice,
-                    images: si.product?.images || [],
-                    productImages: si.product?.productImages || [],
-                    primaryImage: si.product?.primaryImage || undefined,
-                    brand: si.product?.brand,
-                  } as any,
-                  variantId: 0,
-                  colorId: si.colour?.colourId || 0,
-                  sizeId: si.size?.sizeId || 0,
-                  quantity: si.quantity,
-                  unitPrice: si.product?.salePrice || si.product?.basePrice || 0,
-                }));
+                const mapped: CartItem[] = serverItems.map((si: any) => {
+                  // Price priority: use basePrice as actual selling price
+                  const actualPrice = si.product?.basePrice || 0;
+                  return {
+                    id: si.cartItemId,
+                    productId: si.product?.productId,
+                    product: {
+                      id: si.product?.productId,
+                      name: si.product?.name,
+                      basePrice: si.product?.basePrice,
+                      comparePrice: si.product?.comparePrice,
+                      salePrice: si.product?.salePrice,
+                      imageUrl: si.product?.imageUrl || si.product?.primaryImage?.imageUrl || si.product?.primaryImage?.supabaseUrl || '',
+                      images: si.product?.images || [],
+                      productImages: si.product?.productImages || [],
+                      primaryImage: si.product?.primaryImage || undefined,
+                      brand: si.product?.brand,
+                    } as any,
+                    variantId: 0,
+                    colorId: si.colour?.colourId || 0,
+                    sizeId: si.size?.sizeId || 0,
+                    quantity: si.quantity,
+                    unitPrice: actualPrice,
+                  };
+                });
 
                 const subtotal = mapped.reduce((sum, it) => sum + it.unitPrice * it.quantity, 0);
                 const itemCount = mapped.reduce((sum, it) => sum + it.quantity, 0);
@@ -151,8 +163,34 @@ export const useCartStore = create<CartState>()(
           item => item.productId === product.id && item.colorId === colorId && item.sizeId === sizeId
         );
 
+        // After fetching product details, ensure the product object includes latest sizes/colours
+        if (productData) {
+          product = productData;
+        }
+
+        // Helper to compute available stock for given product/color/size
+        const getAvailableStock = (prod: any, colorIdVal?: number, sizeIdVal?: number) => {
+          try {
+            if (!colorIdVal || !sizeIdVal) return Number.MAX_SAFE_INTEGER;
+            const colours = prod.colours || [];
+            const colour = colours.find((c: any) => c.colourId === colorIdVal);
+            if (!colour) return Number.MAX_SAFE_INTEGER;
+            const sizeObj = (colour.sizes || []).find((s: any) => s.sizeId === sizeIdVal);
+            if (!sizeObj) return Number.MAX_SAFE_INTEGER;
+            return (sizeObj.stockQuantity || 0) - (sizeObj.reservedQuantity || 0);
+          } catch (e) {
+            return Number.MAX_SAFE_INTEGER;
+          }
+        };
+
+        const availableStock = getAvailableStock(product, colorId, sizeId);
+        if (quantity > availableStock) {
+          return { success: false, message: `Insufficient stock. Only ${availableStock} items available.` };
+        }
+
         let newItems: CartItem[];
-        const price = product.salePrice || product.basePrice;
+        // Use basePrice as the actual selling price
+        const price = product.basePrice;
 
         if (existingIndex > -1) {
           newItems = items.map((item, index) =>
@@ -203,17 +241,65 @@ export const useCartStore = create<CartState>()(
         set({ items: newItems, subtotal, itemCount });
       },
 
-      updateQuantity: (itemId: number, quantity: number) => {
+      updateQuantity: async (itemId: number, quantity: number) => {
         if (quantity <= 0) {
           get().removeItem(itemId);
           return;
         }
 
-        const newItems = get().items.map(item =>
-          item.id === itemId ? { ...item, quantity } : item
-        );
-        const subtotal = newItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-        const itemCount = newItems.reduce((sum, item) => sum + item.quantity, 0);
+        const items = get().items;
+        const item = items.find(i => i.id === itemId);
+        if (!item) return;
+
+        // Helper to compute available stock from local product info
+        const getAvailableStockLocal = (prod: any, colorIdVal?: number, sizeIdVal?: number) => {
+          try {
+            if (!colorIdVal || !sizeIdVal) return Number.MAX_SAFE_INTEGER;
+            const colours = prod.colours || [];
+            const colour = colours.find((c: any) => c.colourId === colorIdVal);
+            if (!colour) return Number.MAX_SAFE_INTEGER;
+            const sizeObj = (colour.sizes || []).find((s: any) => s.sizeId === sizeIdVal);
+            if (!sizeObj) return Number.MAX_SAFE_INTEGER;
+            return (sizeObj.stockQuantity || 0) - (sizeObj.reservedQuantity || 0);
+          } catch (e) {
+            return Number.MAX_SAFE_INTEGER;
+          }
+        };
+
+        const { useAuthStore } = await import('@/stores/authStore');
+        const user = useAuthStore.getState().user;
+
+        // If user is logged in and this item has a server id, prefer server-side validation
+        if (user && item.id && String(item.id).length < 13) { // heuristic: server IDs are smaller than timestamp ids
+          try {
+            const apiClient = (await import('@/lib/api')).default;
+            const res = await apiClient.put(`/cart-items/update-quantity/${item.id}?quantity=${quantity}`);
+            if (res.data && res.data.success && res.data.data) {
+              // Update local store with server's authoritative quantity
+              const updatedItem = res.data.data;
+              const newItems = items.map(i => i.id === itemId ? { ...i, quantity: updatedItem.getQuantity ? updatedItem.getQuantity() : updatedItem.quantity } : i);
+              const subtotal = newItems.reduce((sum, it) => sum + it.unitPrice * it.quantity, 0);
+              const itemCount = newItems.reduce((sum, it) => sum + it.quantity, 0);
+              set({ items: newItems, subtotal, itemCount });
+            }
+            return;
+          } catch (e: any) {
+            const msg = e.response?.data?.message || 'Failed to update quantity on server';
+            try { (await import('sonner')).toast(msg); } catch (_) { console.warn(msg); }
+            return;
+          }
+        }
+
+        // Local-only update: check available stock in local product data
+        const available = getAvailableStockLocal(item.product, item.colorId, item.sizeId);
+        if (quantity > available) {
+          try { (await import('sonner')).toast(`Insufficient stock. Only ${available} items available.`); } catch (_) { console.warn('Insufficient stock'); }
+          return;
+        }
+
+        const newItems = items.map(i => i.id === itemId ? { ...i, quantity } : i);
+        const subtotal = newItems.reduce((sum, it) => sum + it.unitPrice * it.quantity, 0);
+        const itemCount = newItems.reduce((sum, it) => sum + it.quantity, 0);
         set({ items: newItems, subtotal, itemCount });
       },
 
@@ -327,6 +413,7 @@ export const useCartStore = create<CartState>()(
                 id: si.product?.productId,
                 name: si.product?.name,
                 basePrice: si.product?.basePrice,
+                imageUrl: si.product?.imageUrl || si.product?.primaryImage?.imageUrl || si.product?.primaryImage?.supabaseUrl || '',
                 images: si.product?.images || [],
                 productImages: si.product?.productImages || [],
                 primaryImage: si.product?.primaryImage || undefined,
