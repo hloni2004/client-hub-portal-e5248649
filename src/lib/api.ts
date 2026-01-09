@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useAuthStore } from '@/stores/authStore';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://maisonluxebackend-env.eba-uf7iacuq.eu-north-1.elasticbeanstalk.com/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://e-commerce-2h70.onrender.com/api';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
